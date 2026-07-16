@@ -1,0 +1,10 @@
+{
+  "name": "flipped-english",
+  "version": "1.0.0",
+  "description": "怦然心动 · 英语学习 APP（PWA，豆包粘贴录入 + 云端同步）",
+  "private": true,
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "serve": "npx serve ."
+  }
+}

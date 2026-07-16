@@ -1,0 +1,3117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>🎬 怦然心动 · 英语学习</title>
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e94560">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="怦然心动">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='36' fill='%2316213e'/><text x='96' y='120' text-anchor='middle' font-size='96' fill='%23e94560'>🎬</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Header */
+header {
+  background: linear-gradient(135deg, #16213e, #0f3460);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+header .title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e94560;
+}
+header .counter {
+  font-size: 13px;
+  color: #8899aa;
+  background: rgba(255,255,255,0.08);
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+.update-btn {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05);
+  color: #8899aa;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.settings-btn {
+  font-size: 16px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05);
+  color: #8899aa;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1;
+  white-space: nowrap;
+}
+.settings-btn:active { color: #fff; background: rgba(255,255,255,0.1); }
+.settings-btn.configured { color: #4caf50; }
+.update-btn:active {
+  background: rgba(255,255,255,0.1);
+}
+.update-btn.has-update {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+  border-color: rgba(76, 175, 80, 0.3);
+}
+
+/* Progress bar */
+.progress-wrap {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  background: #1a1a2e;
+}
+.progress-wrap input[type=range] {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #2a2a4a;
+  border-radius: 3px;
+  outline: none;
+}
+.progress-wrap input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #e94560;
+  cursor: pointer;
+}
+
+/* Main content */
+main {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
+}
+
+/* Cards */
+.card {
+  background: #16213e;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(255,255,255,0.06);
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #8899aa;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.card-label .icon { font-size: 16px; }
+
+.cn-card { border-left: 3px solid #e94560; }
+.cn-card .cn-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.cn-card .cn-header .card-label { margin-bottom: 0; }
+.cn-edit-btn {
+  background: rgba(233,69,96,0.12);
+  color: #e94560;
+  border: 1px solid rgba(233,69,96,0.25);
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.cn-edit-btn:active { background: rgba(233,69,96,0.3); }
+.cn-card .cn-text {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.6;
+  color: #fff;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+.cn-edit-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #e94560;
+  background: #0f3460;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1.6;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+}
+.cn-edit-btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+.cn-edit-btns button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cn-edit-save { background: #4e9f3d; color: #fff; }
+.cn-edit-save:active { opacity: 0.8; }
+.cn-edit-cancel { background: rgba(255,255,255,0.08); color: #ccc; }
+.cn-edit-cancel:active { background: rgba(255,255,255,0.15); }
+.cn-save-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 300;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  max-width: 90vw;
+  white-space: pre-line;
+  word-break: break-word;
+  text-align: left;
+  line-height: 1.5;
+}
+.cn-save-toast.show { opacity: 1; }
+.cn-save-toast.success { background: #4e9f3d; color: #fff; }
+.cn-save-toast.error { background: #e94560; color: #fff; }
+
+/* ===== Edit buttons on cards ===== */
+.vg-edit-btn, .pat-edit-btn {
+  background: rgba(240,192,64,0.12);
+  color: #f0c040;
+  border: 1px solid rgba(240,192,64,0.25);
+  padding: 3px 10px;
+  border-radius: 5px;
+  font-size: 11px;
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.vg-edit-btn:active, .pat-edit-btn:active { background: rgba(240,192,64,0.3); }
+
+/* ===== Inline edit forms ===== */
+.vg-edit-form, .pat-edit-form {
+  padding: 8px 12px 10px;
+}
+.vg-edit-form input, .vg-edit-form textarea,
+.pat-edit-form input, .pat-edit-form textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: #0f3460;
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  margin-bottom: 6px;
+  outline: none;
+  resize: vertical;
+}
+.vg-edit-form input:focus, .vg-edit-form textarea:focus,
+.pat-edit-form input:focus, .pat-edit-form textarea:focus {
+  border-color: #f0c040;
+}
+.vg-edit-form textarea, .pat-edit-form textarea {
+  min-height: 50px;
+  line-height: 1.5;
+}
+.vg-edit-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+  align-items: center;
+}
+.vg-edit-row input {
+  flex: 1;
+  margin-bottom: 0;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.vg-edit-row button {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(233,69,96,0.2);
+  color: #e94560;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.vg-add-btn {
+  background: rgba(240,192,64,0.1);
+  color: #f0c040;
+  border: 1px dashed rgba(240,192,64,0.3);
+  padding: 7px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 4px;
+  font-weight: 600;
+}
+.vg-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.vg-edit-actions button {
+  flex: 1;
+  padding: 8px;
+  border-radius: 6px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.vg-edit-save { background: #4e9f3d; color: #fff; }
+.vg-edit-save:active { opacity: 0.8; }
+.vg-edit-cancel { background: rgba(255,255,255,0.08); color: #ccc; }
+
+/* ===== Pattern card header with edit ===== */
+.pat-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+/* ===== Phonetic card ===== */
+.phonetic-card {
+  border-left: 3px solid #4fc3f7;
+}
+.phonetic-text {
+  font-size: 16px;
+  color: #4fc3f7;
+  line-height: 1.6;
+  font-family: "Georgia", "Times New Roman", serif;
+  word-break: break-all;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+
+/* ===== Key Points card ===== */
+.keypoints-card {
+  border-left: 3px solid #ce93d8;
+}
+.keypoint-item {
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background: rgba(206,147,216,0.08);
+  border-radius: 8px;
+}
+.keypoint-expr {
+  font-weight: 700;
+  color: #ce93d8;
+  font-size: 14px;
+  font-family: "Georgia", "Times New Roman", serif;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+.keypoint-expl {
+  font-size: 13px;
+  color: #bbb;
+  margin-top: 2px;
+  line-height: 1.4;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+
+/* ===== Context card ===== */
+.context-card {
+  border-left: 3px solid #a5d6a7;
+}
+.context-text {
+  font-size: 14px;
+  color: #c8e6c9;
+  line-height: 1.7;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+
+/* ===== AI Translate button ===== */
+.ai-btn-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+  flex-shrink: 0;
+  background: #1a1a2e;
+}
+.ai-translate-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+  border-radius: 24px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 2px 8px rgba(102,126,234,0.3);
+}
+.ai-translate-btn:active {
+  transform: scale(0.96);
+  box-shadow: 0 1px 4px rgba(102,126,234,0.2);
+}
+.ai-translate-btn.has-result {
+  background: linear-gradient(135deg, #4caf50, #2e7d32);
+  box-shadow: 0 2px 8px rgba(76,175,80,0.3);
+}
+
+/* ===== AI Modal Overlay ===== */
+.ai-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 1000;
+  padding: 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.ai-modal-overlay.show { display: flex; align-items: flex-start; justify-content: center; }
+.ai-modal {
+  background: #1e1e3a;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 500px;
+  margin: 30px auto;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.ai-modal h3 {
+  font-size: 17px;
+  color: #e0e0e0;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ai-modal-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #8899aa;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+.ai-modal-close:active { color: #fff; }
+
+/* ===== AI Modal: movie name ===== */
+.ai-movie-row {
+  margin-bottom: 14px;
+}
+.ai-movie-row label {
+  display: block;
+  font-size: 12px;
+  color: #8899aa;
+  margin-bottom: 4px;
+}
+.ai-movie-row input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: #0f3460;
+  color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+.ai-movie-row input:focus { border-color: #667eea; }
+
+/* ===== AI Modal: direction toggle ===== */
+.ai-dir-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.ai-dir-btn {
+  flex: 1;
+  padding: 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #8899aa;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.ai-dir-btn.active {
+  color: #fff;
+  background: rgba(102,126,234,0.25);
+  border-color: #667eea;
+}
+
+/* ===== AI Modal: range steppers ===== */
+.ai-range-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ai-range-row label {
+  font-size: 12px;
+  color: #8899aa;
+  min-width: 55px;
+}
+.ai-range-row button {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05);
+  color: #e0e0e0;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+.ai-range-row button:active { background: rgba(102,126,234,0.3); border-color: #667eea; }
+.ai-range-row span.val {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f0c040;
+  min-width: 24px;
+  text-align: center;
+}
+
+/* ===== AI Modal: preview ===== */
+.ai-preview-label {
+  font-size: 12px;
+  color: #8899aa;
+  margin-bottom: 6px;
+  margin-top: 12px;
+}
+.ai-preview-box {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: #0f3460;
+  color: #e0e0e0;
+  font-size: 14px;
+  line-height: 1.6;
+  font-family: "Georgia", "Times New Roman", serif;
+  resize: vertical;
+  outline: none;
+}
+.ai-preview-box:focus { border-color: #667eea; }
+.ai-preview-box.cn-preview {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+/* ===== AI Modal: advanced prompt ===== */
+.ai-advanced-toggle {
+  font-size: 12px;
+  color: #667eea;
+  cursor: pointer;
+  margin: 6px 0;
+  display: inline-block;
+  -webkit-tap-highlight-color: transparent;
+}
+.ai-advanced-toggle:active { color: #8899ff; }
+.ai-advanced-box {
+  display: none;
+  width: 100%;
+  min-height: 80px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(102,126,234,0.3);
+  background: #0a0a2e;
+  color: #aac;
+  font-size: 12px;
+  line-height: 1.5;
+  font-family: "Consolas", "Courier New", monospace;
+  resize: vertical;
+  outline: none;
+  margin-bottom: 8px;
+}
+.ai-advanced-box.show { display: block; }
+
+/* ===== AI Modal: extra requirements ===== */
+.ai-extra-label {
+  font-size: 12px;
+  color: #8899aa;
+  margin-bottom: 4px;
+  margin-top: 10px;
+}
+.ai-extra-input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: #0f3460;
+  color: #e0e0e0;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+.ai-extra-input:focus { border-color: #667eea; }
+
+/* ===== AI Modal: action buttons ===== */
+.ai-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.ai-action-btn {
+  flex: 1;
+  padding: 12px 0;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.ai-action-btn:active { transform: scale(0.97); }
+.ai-action-btn:disabled { opacity: 0.5; pointer-events: none; }
+
+.ai-btn-translate {
+  color: #fff;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+.ai-btn-merge {
+  color: #fff;
+  background: linear-gradient(135deg, #e94560, #c62828);
+}
+
+.ai-loading {
+  text-align: center;
+  padding: 16px;
+  color: #8899aa;
+  font-size: 14px;
+}
+
+/* ===== Verb-pattern alternatives ===== */
+.verb-group {
+  margin-bottom: 6px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.04);
+}
+.verb-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.verb-group-header:active { background: rgba(255,255,255,0.06); }
+.verb-word {
+  font-weight: 700;
+  color: #f0c040;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.verb-meaning {
+  font-size: 12px;
+  color: #8899aa;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.verb-arrow {
+  font-size: 10px;
+  color: #667;
+  transition: transform 0.2s;
+}
+.verb-group.open .verb-arrow { transform: rotate(180deg); }
+.verb-group-body {
+  padding: 0 12px 10px 12px;
+}
+.verb-group-body .alt-item {
+  display: block;
+  padding: 5px 12px;
+  margin: 2px 0;
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px;
+  font-size: 14px;
+  color: #e0e0e0;
+  font-family: "Georgia", "Times New Roman", serif;
+  font-style: italic;
+}
+
+/* ===== Sentence patterns ===== */
+.pattern-card { border-left: 3px solid #f0c040; }
+.pattern-group {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background: rgba(240,192,64,0.06);
+  border-radius: 8px;
+  border: 1px solid rgba(240,192,64,0.15);
+}
+.pattern-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f0c040;
+  margin-bottom: 4px;
+}
+.pattern-structure {
+  font-size: 13px;
+  color: #e0e0e0;
+  font-family: "Consolas", "Courier New", monospace;
+  background: rgba(0,0,0,0.3);
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+.pattern-note {
+  font-size: 12px;
+  color: #8899aa;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.pattern-group .alt-item {
+  display: block;
+  padding: 3px 8px;
+  margin: 2px 0;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+  font-size: 13px;
+  color: #c0c0c0;
+  font-family: "Georgia", "Times New Roman", serif;
+  font-style: italic;
+}
+
+.en-card { border-left: 3px solid #4e9f3d; }
+.en-card .en-text {
+  font-size: 18px;
+  line-height: 1.5;
+  color: #d0f0c0;
+  font-family: "Georgia", "Times New Roman", serif;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+.en-word {
+  display: inline;
+  cursor: pointer;
+  border-bottom: 1px dotted rgba(255,255,255,0.2);
+  transition: all 0.15s;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.en-word:hover, .en-word:active {
+  color: #4e9f3d;
+  border-bottom-color: #4e9f3d;
+}
+
+.alt-card { border-left: 3px solid #ffd700; }
+.alt-card .alt-item {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 15px;
+  color: #e0e0e0;
+  line-height: 1.5;
+}
+.alt-card .alt-item:last-child { border-bottom: none; }
+.alt-tag {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-right: 6px;
+  font-weight: 600;
+}
+.alt-tag.formal { background: #ffd70033; color: #ffd700; }
+.alt-tag.casual { background: #4e9f3d33; color: #4e9f3d; }
+.alt-tag.natural { background: #00bcd433; color: #00bcd4; }
+
+.alt-placeholder {
+  text-align: center;
+  padding: 20px;
+  color: #667;
+}
+.alt-btn {
+  background: #e94560;
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 8px;
+  width: 100%;
+  font-weight: 600;
+}
+.alt-btn:active {
+  opacity: 0.8;
+}
+.alt-btn.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+.alt-hint {
+  font-size: 12px;
+  color: #667;
+  margin-top: 6px;
+}
+
+/* Hidden record badge */
+.hidden-badge {
+  background: #ff9800;
+  color: #000;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  text-align: center;
+}
+/* Show-hidden toggle active */
+#showHiddenBtn.active {
+  background: #ff9800;
+  color: #000;
+}
+
+/* Word popup */
+.word-popup {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f3460;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.word-popup.show { opacity: 1; }
+
+/* Time display */
+.time-badge {
+  font-size: 12px;
+  color: #667;
+  text-align: right;
+  margin-bottom: 8px;
+}
+
+/* Footer nav */
+footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  background: #16213e;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  gap: 10px;
+}
+footer button {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+footer button:active {
+  transform: scale(0.96);
+}
+.btn-prev {
+  background: rgba(255,255,255,0.08);
+  color: #ccc;
+}
+.btn-next {
+  background: #e94560;
+  color: #fff;
+}
+.btn-jump {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  color: #8899aa;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+}
+
+/* Jump modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  display: none;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: #16213e;
+  border-radius: 16px;
+  padding: 24px;
+  width: 85%;
+  max-width: 340px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.modal-box h3 {
+  font-size: 18px;
+  color: #fff;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.modal-box input {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: #0f3460;
+  color: #fff;
+  font-size: 18px;
+  text-align: center;
+  margin-bottom: 12px;
+  outline: none;
+}
+.modal-box input:focus {
+  border-color: #e94560;
+}
+.modal-box .modal-btns {
+  display: flex;
+  gap: 10px;
+}
+.modal-box .modal-btns button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-cancel { background: rgba(255,255,255,0.08); color: #ccc; }
+.btn-go { background: #e94560; color: #fff; }
+
+/* No-script / loading */
+.loading-msg {
+  text-align: center;
+  padding: 40px;
+  color: #8899aa;
+  font-size: 16px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="title" id="headerTitle">🎬 怦然心动</span>
+  <div style="display:flex; align-items:center; gap:10px;">
+    <button class="settings-btn" id="settingsBtn" onclick="toggleSettings()" title="设置API Key">⚙️</button>
+    <button class="update-btn" id="cloudSyncBtn" onclick="forceRefreshCloud()" title="从云端强制刷新数据">☁️</button>
+    <button class="update-btn" id="showHiddenBtn" onclick="toggleShowHidden()" title="显示/隐藏已合并记录">👁</button>
+    <button class="update-btn" id="updateBtn" onclick="checkForUpdates()" title="检查更新">
+      🔄
+    </button>
+    <span class="counter" id="counter">1 / —</span>
+  </div>
+</header>
+
+<div class="progress-wrap">
+  <input type="range" id="progress" min="1" value="1" step="1">
+</div>
+
+<div class="ai-btn-wrap">
+  <button class="ai-translate-btn" id="aiBtn" onclick="openDoubaoPaste()">
+    📋 粘贴豆包结果
+  </button>
+</div>
+
+<main id="main">
+  <div class="loading-msg">加载中…</div>
+</main>
+
+<div class="word-popup" id="wordPopup"></div>
+
+<footer>
+  <button class="btn-prev" id="btnPrev" onclick="prevSentence()">◀ 上一句</button>
+  <button class="btn-jump" id="btnJump" onclick="showJump()">🔍</button>
+  <button class="btn-next" id="btnNext" onclick="nextSentence()">下一句 ▶</button>
+</footer>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <h3>跳转到第几句？</h3>
+    <input type="number" id="jumpInput" min="1" placeholder="输入序号">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="hideJump()">取消</button>
+      <button class="btn-go" onclick="doJump()">跳转</button>
+    </div>
+  </div>
+</div>
+
+<div class="cn-save-toast" id="cnToast"></div>
+
+<!-- ===== Settings Modal ===== -->
+<div class="modal-overlay" id="settingsModal" onclick="if(event.target===this) toggleSettings()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <h3>⚙️ 设置</h3>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px; color:#8899aa; display:block; margin-bottom:6px;">
+        🔑 火山方舟 ARK_API_KEY
+      </label>
+      <input type="password" id="settingsApiKey" placeholder="sk-xxxxxxxx" 
+        style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); 
+               background:#0f3460; color:#fff; font-size:14px; font-family:monospace; outline:none;">
+      <div style="font-size:11px; color:#667; margin-top:4px;">
+        在 <a href="https://console.volcengine.com/ark" target="_blank" style="color:#667eea;">火山方舟控制台</a> 获取
+      </div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px; color:#8899aa; display:block; margin-bottom:6px;">
+        🔗 AI 代理地址（解决手机/PWA 跨域 CORS）
+      </label>
+      <input type="text" id="settingsProxyUrl" placeholder="https://your-worker.workers.dev/api/translate"
+        style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.15);
+               background:#0f3460; color:#fff; font-size:13px; font-family:monospace; outline:none;">
+      <div style="font-size:11px; color:#667; margin-top:4px;">
+        留空则直连火山方舟（手机/PWA 会报 CORS 错误）。部署好代理后填入其地址即可。
+      </div>
+      <button type="button" onclick="testProxyConnection()" id="proxyTestBtn"
+        style="margin-top:8px; width:100%; padding:8px; border-radius:8px; border:1px solid #667eea;
+               background:transparent; color:#9db4ff; font-size:12px; cursor:pointer;">
+        🔌 测试代理连接
+      </button>
+      <pre id="proxyTestResult" style="display:none; margin-top:8px; padding:8px; border-radius:8px;
+           background:#0a1626; color:#cfe; font-size:11px; white-space:pre-wrap; word-break:break-all;"></pre>
+    </div>
+    <div style="margin-bottom:14px; padding:10px; border-radius:8px; background:#0f3460; font-size:11px; color:#8899aa;">
+      <div>当前 Service Worker：<span id="swVersionLabel" style="color:#7fd1ff;">检测中…</span></div>
+      <div style="margin-top:8px; color:#ffb3b3; line-height:1.5;">
+        若翻译仍报「Failed to fetch」，多半是手机里旧 SW 没更新。点下方按钮可强制清除并刷新：
+      </div>
+      <button type="button" onclick="clearServiceWorker()"
+        style="margin-top:8px; width:100%; padding:8px; border-radius:8px; border:1px solid #ff9a9a;
+               background:transparent; color:#ff9a9a; font-size:12px; cursor:pointer;">
+        🧹 强制清除 Service Worker 并刷新
+      </button>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="clearApiKey()">清除</button>
+      <button class="btn-go" onclick="saveApiKey()">💾 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== AI Translate Modal ===== -->
+<div class="ai-modal-overlay" id="aiModalOverlay" onclick="closeAITranslate(event)">
+  <div class="ai-modal" id="aiModal" onclick="event.stopPropagation()">
+    <h3>
+      🤖 AI 深度翻译
+      <button class="ai-modal-close" onclick="closeAITranslate()">&times;</button>
+    </h3>
+
+    <!-- Movie name -->
+    <div class="ai-movie-row">
+      <label>🎬 电影</label>
+      <input type="text" id="aiMovieName" placeholder="输入电影名称">
+    </div>
+
+    <!-- Direction -->
+    <div class="ai-dir-row">
+      <button class="ai-dir-btn active" id="aiDirEN" onclick="setAIDir('en2cn')">英 → 中</button>
+      <button class="ai-dir-btn" id="aiDirCN" onclick="setAIDir('cn2en')">中 → 英</button>
+    </div>
+
+    <!-- Range steppers -->
+    <div class="ai-range-row">
+      <label>向上取：</label>
+      <button onclick="adjRange('up',-1)">−</button>
+      <span class="val" id="aiUpCount">1</span>
+      <button onclick="adjRange('up',1)">+</button>
+    </div>
+    <div class="ai-range-row">
+      <label>向下取：</label>
+      <button onclick="adjRange('down',-1)">−</button>
+      <span class="val" id="aiDownCount">1</span>
+      <button onclick="adjRange('down',1)">+</button>
+    </div>
+
+    <!-- Preview -->
+    <div class="ai-preview-label">📝 将发送给豆包的内容（可直接编辑）</div>
+    <textarea class="ai-preview-box" id="aiPreviewEN" rows="4" oninput="syncPreviewToCN()"></textarea>
+
+    <!-- CN preview (hidden by default in en2cn mode, shown in cn2en mode) -->
+    <textarea class="ai-preview-box cn-preview" id="aiPreviewCN" rows="3" style="margin-top:6px;" placeholder="中文原文预览"></textarea>
+
+    <!-- Advanced: system prompt -->
+    <span class="ai-advanced-toggle" onclick="toggleAdvancedPrompt()">[▼] 高级：查看/编辑 System Prompt</span>
+    <textarea class="ai-advanced-box" id="aiSystemPrompt" rows="8"></textarea>
+
+    <!-- Extra requirements -->
+    <div class="ai-extra-label">💬 额外要求（可选）</div>
+    <input type="text" class="ai-extra-input" id="aiExtra" placeholder="如：翻译风格口语化、重点解析不少于3个">
+
+    <!-- Loading -->
+    <div class="ai-loading" id="aiLoading" style="display:none;">⏳ AI 翻译中，预计 30~60 秒…</div>
+
+    <!-- Actions -->
+    <div class="ai-actions" id="aiActions">
+      <button class="ai-action-btn ai-btn-translate" id="aiBtnTranslate" onclick="doTranslate()">
+        📝 仅翻译并写入
+      </button>
+      <button class="ai-action-btn ai-btn-merge" id="aiBtnMerge" onclick="doMergeTranslate()">
+        🔗 合并+翻译
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Doubao Paste Modal ===== -->
+<div class="ai-modal-overlay" id="doubaoModalOverlay" onclick="closeDoubaoPaste(event)">
+  <div class="ai-modal" id="doubaoModal" onclick="event.stopPropagation()">
+    <h3>
+      📋 粘贴豆包结果
+      <button class="ai-modal-close" onclick="closeDoubaoPaste()">&times;</button>
+    </h3>
+
+    <div style="font-size:12px; color:#8899aa; line-height:1.6; margin-bottom:10px;">
+      ① 点下面「复制提问模板」→ 发给豆包；② 复制豆包整段回复 → 粘贴到下方；③ 点「解析并应用」即可写入当前字幕并同步云端。
+    </div>
+
+    <button class="ai-action-btn ai-btn-translate" style="width:100%; margin-bottom:8px;" onclick="copyDoubaoTemplate()">
+      📋 复制提问模板
+    </button>
+    <textarea class="ai-preview-box" id="doubaoTemplateBox" rows="10" readonly
+      style="background:#0a1626; color:#9db4ff; font-size:12px;"></textarea>
+
+    <div class="ai-extra-label" style="margin-top:12px;">📥 粘贴豆包的回复（支持 JSON 或「字段名：内容」文字格式）：</div>
+    <textarea class="ai-preview-box" id="doubaoPasteBox" rows="10"
+      placeholder="在此粘贴豆包返回的内容…"></textarea>
+
+    <div id="doubaoStatus" style="display:none; margin-top:8px; padding:8px; border-radius:8px;
+         background:#0a1626; color:#cfe; font-size:12px; white-space:pre-wrap; word-break:break-all;"></div>
+
+    <div class="ai-actions" style="margin-top:12px;">
+      <button class="ai-action-btn ai-btn-translate" onclick="applyDoubaoPaste()">✅ 解析并应用</button>
+      <button class="ai-action-btn ai-btn-merge" onclick="closeDoubaoPaste()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+// ===== Movie config =====
+var MOVIE_NAME = '怦然心动';
+var MOVIE_NAME_EN = 'Flipped';
+
+// ===== State =====
+let currentIndex = 0;
+let data = [];
+let visibleIndices = []; // indices of non-hidden sentences
+let showHidden = false;   // toggle: show hidden (merged) records
+
+// ===== Cloud sync config =====
+const CLOUD_BIN_ID = '6a43394ff5f4af5e29453814';
+const CLOUD_API_KEY = '$2a$10$gx91oQ1uGC0m2UED6DaOHeY.66w5eJK8UrK7ZEfmZeHHH4W1.yAEe';
+const CLOUD_GET_URL = 'https://api.jsonbin.io/v3/b/' + CLOUD_BIN_ID + '/latest?meta=false';
+const CLOUD_PUT_URL = 'https://api.jsonbin.io/v3/b/' + CLOUD_BIN_ID;
+let cloudOverrides = {};
+let cloudAvailable = true;
+
+// ===== Init =====
+function init() {
+  if (typeof subtitleData === 'undefined' || !subtitleData || subtitleData.length === 0) {
+    document.getElementById('main').innerHTML = '<div class="loading-msg">数据加载失败，请刷新重试</div>';
+    return;
+  }
+  data = subtitleData;
+  document.getElementById('progress').max = data.length;
+
+  // Set movie title
+  document.getElementById('headerTitle').textContent = '🎬 ' + MOVIE_NAME;
+  document.title = '🎬 ' + MOVIE_NAME + ' · 英语学习';
+
+  // Restore progress from localStorage
+  const saved = localStorage.getItem('flipped_index');
+  if (saved !== null) {
+    const idx = parseInt(saved);
+    if (idx >= 0 && idx < data.length) {
+      currentIndex = idx;
+    }
+  }
+
+  document.getElementById('progress').addEventListener('input', onProgress);
+  document.getElementById('progress').addEventListener('change', onProgressEnd);
+
+  // Swipe support
+  let touchStartX = 0;
+  const main = document.getElementById('main');
+  main.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, {passive: true});
+  main.addEventListener('touchend', e => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 60) {
+      if (diff > 0) nextSentence();
+      else prevSentence();
+    }
+  });
+
+  // Keyboard support
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); nextSentence(); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prevSentence(); }
+    if (e.key === 'Escape') hideJump();
+  });
+
+  // Hide modal on overlay click
+  document.getElementById('modal').addEventListener('click', function(e) {
+    if (e.target === this) hideJump();
+  });
+
+  // Load cloud overrides, then render
+  loadCloudOverrides();
+}
+
+// ===== Visible indices management (for merged/hidden sentences) =====
+function rebuildVisibleIndices() {
+  visibleIndices = [];
+  for (var i = 0; i < data.length; i++) {
+    if (showHidden) {
+      visibleIndices.push(i);
+    } else if (!data[i].hidden) {
+      visibleIndices.push(i);
+    }
+  }
+  if (visibleIndices.length === 0 && data.length > 0) {
+    for (var i = 0; i < data.length; i++) visibleIndices.push(i);
+  }
+}
+
+function visibleIndexOf(idx) {
+  return visibleIndices.indexOf(idx);
+}
+
+function getVisiblePosition(idx) {
+  var pos = visibleIndexOf(idx);
+  return pos === -1 ? 0 : pos;
+}
+
+// ===== Render =====
+function render() {
+  // If showHidden is OFF and current sentence is hidden, jump to nearest visible
+  if (!showHidden && data[currentIndex] && data[currentIndex].hidden) {
+    var pos = getVisiblePosition(currentIndex);
+    if (pos < visibleIndices.length - 1) pos++;
+    currentIndex = visibleIndices[pos] || visibleIndices[visibleIndices.length - 1] || 0;
+  }
+
+  const item = data[currentIndex];
+  if (!item) return;
+
+  var vPos = getVisiblePosition(currentIndex);
+
+  // Update counter: when showHidden, show "visible/total"; otherwise just normal
+  if (showHidden) {
+    var hiddenCount = 0;
+    for (var hi = 0; hi < data.length; hi++) { if (data[hi].hidden) hiddenCount++; }
+    document.getElementById('counter').textContent = (vPos + 1) + ' / ' + visibleIndices.length +
+      (hiddenCount > 0 ? ' (含' + hiddenCount + '条已合并)' : '');
+  } else {
+    document.getElementById('counter').textContent = (vPos + 1) + ' / ' + visibleIndices.length;
+  }
+
+  // Update progress bar
+  document.getElementById('progress').value = vPos + 1;
+  document.getElementById('progress').max = visibleIndices.length;
+
+  // Save position
+  try { localStorage.setItem('flipped_index', currentIndex); } catch(e) {}
+
+  // Build HTML
+  let html = '';
+
+  // Hidden record badge
+  if (item.hidden) {
+    html += `<div class="hidden-badge">⚠️ 此条已合并到上一句，当前为原始独立记录</div>`;
+  }
+
+  // Time badge (if available)
+  if (item.start) {
+    html += `<div class="time-badge">⏱ ${item.start} → ${item.end}</div>`;
+  }
+
+  // Chinese card
+  html += `<div class="card cn-card">
+    <div class="cn-header">
+      <div class="card-label"><span class="icon">🀄</span> 中文</div>
+      <button class="cn-edit-btn" onclick="editCN()">✏️ 编辑</button>
+    </div>
+    <div class="cn-text" id="cnText">${escapeHtml(item.cn)}</div>
+  </div>`;
+
+  // English card
+  html += `<div class="card en-card">
+    <div class="card-label"><span class="icon">🇬🇧</span> 电影原版</div>
+    <div class="en-text">${makeClickableWords(item.en)}</div>
+  </div>`;
+
+  // Phonetic card (美音音标)
+  if (item.phonetic) {
+    html += `<div class="card phonetic-card">
+      <div class="card-label"><span class="icon">🔤</span> 美音音标</div>
+      <div class="phonetic-text">${escapeHtml(item.phonetic)}</div>
+    </div>`;
+  }
+
+  // Key Points card (重点解析)
+  if (item.keyPoints && item.keyPoints.length > 0) {
+    html += `<div class="card keypoints-card">
+      <div class="card-label"><span class="icon">🔍</span> 重点解析</div>`;
+    for (var kp of item.keyPoints) {
+      html += `<div class="keypoint-item">
+        <div class="keypoint-expr">${escapeHtml(kp.expression)}</div>
+        <div class="keypoint-expl">${escapeHtml(kp.explanation)}</div>
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Context card (语境串联)
+  if (item.context) {
+    html += `<div class="card context-card">
+      <div class="card-label"><span class="icon">📖</span> 语境串联</div>
+      <div class="context-text">${escapeHtml(item.context)}</div>
+    </div>`;
+  }
+
+  // Mother pattern card (母句模板)
+  if (item.motherPattern) {
+    html += `<div class="card context-card">
+      <div class="card-label"><span class="icon">🧩</span> 母句模板</div>
+      <div class="context-text">${escapeHtml(item.motherPattern)}</div>
+    </div>`;
+  }
+
+  // Alternatives card - 优先读取 data.js 中已有的 alts
+  if (item.alts && item.alts.length > 0) {
+    html += `<div class="card alt-card" id="altCard">
+      <div class="card-label"><span class="icon">🔄</span> 其他说法</div>
+      <div id="altContent"></div>
+    </div>`;
+  } else {
+    html += `<div class="card alt-card" id="altCard">
+      <div class="card-label"><span class="icon">🔄</span> 其他说法</div>
+      <div id="altContent">
+        <div class="alt-placeholder">
+          <p style="margin-bottom:8px;color:#8899aa;">还没有生成替代说法</p>
+          <button class="alt-btn" onclick="loadAlternatives()">💡 生成替代说法</button>
+          <p class="alt-hint">共 ${visibleIndices.length} 句，首次生成需等待</p>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('main').innerHTML = html;
+
+  // Scroll to top
+  document.getElementById('main').scrollTop = 0;
+
+  // Update button states
+  var vPos = getVisiblePosition(currentIndex);
+  document.getElementById('btnPrev').style.opacity = vPos === 0 ? '0.3' : '1';
+  document.getElementById('btnNext').style.opacity = vPos >= visibleIndices.length - 1 ? '0.3' : '1';
+
+  // Update AI button state
+  var aiBtn = document.getElementById('aiBtn');
+  if (aiBtn) {
+    var hasAI = item.phonetic || item.keyPoints || item.context || item.motherPattern || (item.alts && item.alts.length > 0);
+    aiBtn.classList.toggle('has-result', !!hasAI);
+  }
+
+  // Render alternatives
+  if (item.alts && item.alts.length > 0) {
+    renderAlternatives(item.alts);
+  } else {
+    checkCachedAlt();
+  }
+}
+
+function checkCachedAlt() {
+  const key = 'alt_' + currentIndex;
+  const cached = localStorage.getItem(key);
+  if (cached) {
+    const alts = JSON.parse(cached);
+    renderAlternatives(alts);
+  }
+}
+
+function renderAlternatives(alts) {
+  var container = document.getElementById('altContent');
+  // Detect format: new format has 'verb' field, old format has 'tag' field
+  var isNewFormat = alts.length > 0 && alts[0].verb !== undefined;
+  
+  if (isNewFormat) {
+    // New format: verb-pattern groups with edit buttons
+    var html = '';
+    for (var i = 0; i < alts.length; i++) {
+      var a = alts[i];
+      html += '<div class="verb-group" id="vg' + i + '">';
+      html += '<div class="verb-group-header" id="vgh' + i + '">';
+      html += '<span class="verb-word">' + escapeHtml(a.verb) + '</span>';
+      html += '<span class="verb-meaning">' + escapeHtml(a.meaning) + '</span>';
+      html += '<button class="vg-edit-btn" onclick="event.stopPropagation();editVerbGroup(' + i + ')" title="编辑动词分组">✏️</button>';
+      html += '<span class="verb-arrow" onclick="toggleVerbGroup(' + i + ')">▼</span>';
+      html += '</div>';
+      html += '<div class="verb-group-body" id="vgb' + i + '">';
+      for (var j = 0; j < a.examples.length; j++) {
+        html += '<div class="alt-item">' + escapeHtml(a.examples[j]) + '</div>';
+      }
+      html += '</div>';
+      html += '</div>';
+    }
+    container.innerHTML = html;
+    setTimeout(function(){ toggleVerbGroup(0); }, 50);
+  } else {
+    // Old format: tag-based
+    var html = '';
+    for (var i = 0; i < alts.length; i++) {
+      var a = alts[i];
+      var tagClass = a.tag === '正式' ? 'formal' : a.tag === '口语' ? 'casual' : 'natural';
+      html += '<div class="alt-item"><span class="alt-tag ' + tagClass + '">' + escapeHtml(a.tag) + '</span>' + escapeHtml(a.text) + '</div>';
+    }
+    container.innerHTML = html;
+  }
+}
+
+function toggleVerbGroup(idx) {
+  var el = document.getElementById('vg' + idx);
+  if (!el) return;
+  el.classList.toggle('open');
+}
+
+// ===== Alternatives loading =====
+let altLoading = false;
+function loadAlternatives() {
+  if (altLoading) return;
+  const item = data[currentIndex];
+  if (!item) return;
+
+  // Check if already cached
+  const key = 'alt_' + currentIndex;
+  if (localStorage.getItem(key)) {
+    checkCachedAlt();
+    return;
+  }
+
+  altLoading = true;
+  const btn = document.querySelector('.alt-btn');
+  if (btn) {
+    btn.textContent = '生成中…';
+    btn.classList.add('loading');
+  }
+
+  // Use the AI - since we can't call AI from static page, we provide manual alternatives
+  // based on the English text. For a real app, this would be an API call.
+  // We generate alternatives client-side using a prompt that the user can copy.
+
+  // Since this is static, we show a helpful state
+  setTimeout(() => {
+    const container = document.getElementById('altContent');
+    if (container) {
+      container.innerHTML = `
+        <div class="alt-item">
+          <span class="alt-tag formal">提示</span>
+          在 WorkBuddy 中发送以下内容获取替代说法：
+          <div style="background:#0f3460;padding:10px;border-radius:8px;margin-top:8px;font-size:12px;color:#aac;word-break:break-all;">
+            "${escapeHtml(item.en)}" 这句话有哪些替换说法？请给出正式版、口语版各一种
+          </div>
+        </div>
+        <div class="alt-item">
+          <span class="alt-tag natural">复制</span>
+          <button class="alt-btn" onclick="copyPrompt()" style="margin:0;font-size:13px;padding:8px 16px;">📋 复制提问到剪贴板</button>
+        </div>
+      `;
+    }
+    if (btn) { btn.classList.remove('loading'); }
+    altLoading = false;
+  }, 500);
+}
+
+function copyPrompt() {
+  const item = data[currentIndex];
+  const text = `"${item.en}" 这句话有哪些替换说法？请给出正式版、口语版各一种`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      showPopup('已复制！到 WorkBuddy 粘贴提问');
+    });
+  }
+}
+
+// ===== Word click =====
+function makeClickableWords(text) {
+  // Split by spaces, make each word tappable
+  return text.replace(/([a-zA-Z]+(?:'[a-zA-Z]+)?)/g, '<span class="en-word" onclick="wordTap(event, \'$1\')">$1</span>');
+}
+
+function wordTap(e, word) {
+  e.stopPropagation();
+  showPopup(word);
+}
+
+function showPopup(msg) {
+  const popup = document.getElementById('wordPopup');
+  popup.textContent = msg;
+  popup.classList.add('show');
+  clearTimeout(popup._timeout);
+  popup._timeout = setTimeout(() => popup.classList.remove('show'), 2000);
+}
+
+// ===== Navigation =====
+function nextSentence() {
+  var pos = getVisiblePosition(currentIndex);
+  if (pos < visibleIndices.length - 1) {
+    currentIndex = visibleIndices[pos + 1];
+    render();
+  }
+}
+
+function prevSentence() {
+  var pos = getVisiblePosition(currentIndex);
+  if (pos > 0) {
+    currentIndex = visibleIndices[pos - 1];
+    render();
+  }
+}
+
+function onProgress(e) {
+  var vPos = parseInt(e.target.value) - 1;
+  if (vPos >= 0 && vPos < visibleIndices.length) {
+    currentIndex = visibleIndices[vPos];
+  }
+  document.getElementById('counter').textContent = (vPos + 1) + ' / ' + visibleIndices.length;
+}
+
+function onProgressEnd(e) {
+  var vPos = parseInt(e.target.value) - 1;
+  if (vPos >= 0 && vPos < visibleIndices.length) {
+    currentIndex = visibleIndices[vPos];
+  }
+  render();
+}
+
+// ===== Jump modal =====
+function showJump() {
+  document.getElementById('modal').classList.add('show');
+  const inp = document.getElementById('jumpInput');
+  inp.max = visibleIndices.length;
+  inp.value = getVisiblePosition(currentIndex) + 1;
+  setTimeout(() => inp.focus(), 100);
+}
+
+function hideJump() {
+  document.getElementById('modal').classList.remove('show');
+}
+
+function doJump() {
+  const val = parseInt(document.getElementById('jumpInput').value);
+  if (val >= 1 && val <= visibleIndices.length) {
+    currentIndex = visibleIndices[val - 1];
+    render();
+    hideJump();
+  } else {
+    showPopup('请输入 1 ~ ' + visibleIndices.length + ' 之间的数字');
+  }
+}
+
+// ===== Cloud Sync =====
+async function loadCloudOverrides() {
+  try {
+    const resp = await fetch(CLOUD_GET_URL, {
+      headers: { 'X-Master-Key': CLOUD_API_KEY },
+      cache: 'no-store'
+    });
+    if (resp.ok) {
+      const json = await resp.json();
+      cloudOverrides = json.record || json || {};
+      if (Array.isArray(cloudOverrides)) cloudOverrides = {};
+      // Apply overrides: support both string (cn-only) and object (structured) values
+      for (const [idx, val] of Object.entries(cloudOverrides)) {
+        const i = parseInt(idx);
+        if (i >= 0 && i < data.length) {
+          if (typeof val === 'string' && val.trim()) {
+            data[i].cn = val;
+          } else           if (typeof val === 'object' && val !== null) {
+            if (val.cn && val.cn.trim()) data[i].cn = val.cn;
+            if (val.en && val.en.trim()) data[i].en = val.en;
+            if (val.alts) data[i].alts = val.alts;
+
+            if (val.phonetic) data[i].phonetic = val.phonetic;
+            if (val.keyPoints) data[i].keyPoints = val.keyPoints;
+            if (val.context) data[i].context = val.context;
+            if (val.motherPattern) data[i].motherPattern = val.motherPattern;
+
+            // Apply hidden flag for merged sentences
+            if (val.hidden === true) data[i].hidden = true;
+            else if (val.hidden === false) data[i].hidden = false;
+          }
+        }
+      }
+      cloudAvailable = true;
+      try { localStorage.setItem('flipped_overrides', JSON.stringify(cloudOverrides)); } catch(e) {}
+    } else {
+      cloudAvailable = false;
+      fallbackLocalOverrides();
+    }
+  } catch(e) {
+    cloudAvailable = false;
+    fallbackLocalOverrides();
+  }
+  rebuildVisibleIndices();
+  // Restore position: ensure currentIndex points to a visible sentence
+  if (data[currentIndex] && data[currentIndex].hidden) {
+    var pos = getVisiblePosition(currentIndex);
+    if (pos < visibleIndices.length - 1) pos++;
+    currentIndex = visibleIndices[pos] || visibleIndices[visibleIndices.length - 1] || 0;
+  }
+
+  // Detect legacy merge data (no __v and contains AI-generated fields)
+  var legacyDetected = false;
+  if (cloudOverrides.__v === undefined) {
+    for (const [idx, val] of Object.entries(cloudOverrides)) {
+      if (idx === '__v') continue;
+      const i = parseInt(idx);
+      if (isNaN(i)) continue;
+      if (typeof val === 'object' && val !== null && (val.alts || val.phonetic || val.keyPoints || val.context)) {
+        legacyDetected = true;
+        break;
+      }
+    }
+  }
+
+  render();
+
+  if (legacyDetected) {
+    setTimeout(function() {
+      showToast('检测到旧版合并/翻译数据，建议在本设备重新合并一次以同步到其他设备', true);
+    }, 500);
+  }
+}
+
+async function forceRefreshCloud() {
+  var btn = document.getElementById('cloudSyncBtn');
+  btn.textContent = '⏳';
+  btn.disabled = true;
+
+  // Clear local cache first
+  try { localStorage.removeItem('flipped_overrides'); } catch(e) {}
+
+  // Re-fetch from cloud
+  try {
+    var resp = await fetch(CLOUD_GET_URL + '&_t=' + Date.now(), {
+      headers: { 'X-Master-Key': CLOUD_API_KEY },
+      cache: 'no-store'
+    });
+    if (resp.ok) {
+      var json = await resp.json();
+      cloudOverrides = json.record || json || {};
+      if (Array.isArray(cloudOverrides)) cloudOverrides = {};
+      cloudAvailable = true;
+
+      // Re-apply all overrides to data array
+      for (var idx in cloudOverrides) {
+        if (idx === '__v') continue;
+        var i = parseInt(idx);
+        if (isNaN(i) || i < 0 || i >= data.length) continue;
+        var val = cloudOverrides[idx];
+        if (typeof val === 'string' && val.trim()) {
+          data[i].cn = val;
+        } else if (typeof val === 'object' && val !== null) {
+          if (val.cn && val.cn.trim()) data[i].cn = val.cn;
+          if (val.en && val.en.trim()) data[i].en = val.en;
+          if (val.alts) data[i].alts = val.alts;
+          if (val.phonetic) data[i].phonetic = val.phonetic;
+          if (val.keyPoints) data[i].keyPoints = val.keyPoints;
+          if (val.context) data[i].context = val.context;
+          if (val.motherPattern) data[i].motherPattern = val.motherPattern;
+          if (val.hidden === true) data[i].hidden = true;
+          else if (val.hidden === false) data[i].hidden = false;
+        }
+      }
+
+      // Save to local cache
+      try { localStorage.setItem('flipped_overrides', JSON.stringify(cloudOverrides)); } catch(e) {}
+
+      rebuildVisibleIndices();
+      render();
+      showToast('✅ 已从云端刷新（' + visibleIndices.length + ' 条可见）', false);
+    } else {
+      showToast('⚠️ 云端不可达(' + resp.status + ')，使用本地数据', true);
+    }
+  } catch(e) {
+    showToast('⚠️ 网络异常，使用本地数据', true);
+  }
+
+  btn.textContent = '☁️';
+  btn.disabled = false;
+}
+
+function toggleShowHidden() {
+  showHidden = !showHidden;
+  var btn = document.getElementById('showHiddenBtn');
+  if (showHidden) {
+    btn.classList.add('active');
+    btn.textContent = '👁️';
+    btn.title = '当前显示全部记录（含已合并）';
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = '👁';
+    btn.title = '显示/隐藏已合并记录';
+  }
+  rebuildVisibleIndices();
+  render();
+}
+
+function fallbackLocalOverrides() {
+  const cached = localStorage.getItem('flipped_overrides');
+  if (cached) {
+    try {
+      cloudOverrides = JSON.parse(cached);
+      for (const [idx, val] of Object.entries(cloudOverrides)) {
+        const i = parseInt(idx);
+        if (i >= 0 && i < data.length) {
+          if (typeof val === 'string' && val) {
+            data[i].cn = val;
+          } else if (typeof val === 'object' && val !== null) {
+            if (val.cn) data[i].cn = val.cn;
+            if (val.en) data[i].en = val.en;
+            if (val.alts) data[i].alts = val.alts;
+
+            if (val.phonetic) data[i].phonetic = val.phonetic;
+            if (val.keyPoints) data[i].keyPoints = val.keyPoints;
+            if (val.context) data[i].context = val.context;
+            if (val.motherPattern) data[i].motherPattern = val.motherPattern;
+
+            if (val.hidden === true) data[i].hidden = true;
+            else if (val.hidden === false) data[i].hidden = false;
+          }
+        }
+      }
+    } catch(e) {}
+  }
+}
+
+async function saveCloudOverride(idx, newText) {
+  var item = data[idx];
+  item.cn = newText;
+  
+  // Store as structured object for consistency
+  var obj = { cn: newText, en: item.en, alts: item.alts,
+              phonetic: item.phonetic, keyPoints: item.keyPoints, context: item.context,
+              motherPattern: item.motherPattern };
+  if (item.hidden === true) obj.hidden = true;
+  if (item.hidden === false) obj.hidden = false;
+  cloudOverrides[String(idx)] = obj;
+  
+  try { localStorage.setItem('flipped_overrides', JSON.stringify(cloudOverrides)); } catch(e) {}
+  if (!cloudAvailable) { showToast('✅ 已保存到本地', false); return; }
+  try {
+    const resp = await fetch(CLOUD_PUT_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': CLOUD_API_KEY
+      },
+      body: JSON.stringify(cloudOverrides)
+    });
+    if (resp.ok) {
+      showToast('✅ 已保存到云端', false);
+    } else {
+      cloudAvailable = false;
+      showToast('⚠️ 云端同步失败，已保存到本地', true);
+    }
+  } catch(e) {
+    cloudAvailable = false;
+    showToast('⚠️ 网络异常，已保存到本地', true);
+  }
+}
+
+function showToast(msg, isError) {
+  const toast = document.getElementById('cnToast');
+  toast.textContent = msg;
+  toast.className = 'cn-save-toast ' + (isError ? 'error' : 'success');
+  toast.classList.add('show');
+  clearTimeout(toast._timeout);
+  // Errors stay 10s for screenshot, success 3s
+  toast._timeout = setTimeout(function() { toast.classList.remove('show'); }, isError ? 10000 : 3000);
+}
+
+// ===== Chinese Text Editing =====
+function editCN() {
+  const item = data[currentIndex];
+  if (!item) return;
+  const cnEl = document.getElementById('cnText');
+  if (!cnEl) return;
+  cnEl.innerHTML = '<textarea class="cn-edit-textarea" id="cnEditInput">' + escapeHtml(item.cn) + '</textarea>' +
+    '<div class="cn-edit-btns">' +
+    '<button class="cn-edit-cancel" onclick="cancelEdit()">取消</button>' +
+    '<button class="cn-edit-save" onclick="saveEdit()">💾 保存</button>' +
+    '</div>';
+  var ta = document.getElementById('cnEditInput');
+  if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+}
+
+function cancelEdit() {
+  var cnEl = document.getElementById('cnText');
+  if (cnEl) cnEl.innerHTML = escapeHtml(data[currentIndex].cn);
+}
+
+function saveEdit() {
+  var ta = document.getElementById('cnEditInput');
+  if (!ta) return;
+  var newText = ta.value.trim();
+  if (!newText) { showToast('内容不能为空', true); return; }
+  saveCloudOverride(currentIndex, newText);
+  var cnEl = document.getElementById('cnText');
+  if (cnEl) cnEl.innerHTML = escapeHtml(newText);
+}
+
+// ===== Verb Group Editing =====
+function editVerbGroup(idx) {
+  var item = data[currentIndex];
+  var vg = item.alts[idx];
+  var body = document.getElementById('vgb' + idx);
+  var header = document.getElementById('vgh' + idx);
+  if (!body || !vg) return;
+  
+  var html = '<div class="vg-edit-form">';
+  html += '<label style="font-size:12px;color:#8899aa;">动词短语</label>';
+  html += '<input id="vgVerb' + idx + '" value="' + escapeHtml(vg.verb) + '" placeholder="动词短语，如 get to know">';
+  html += '<label style="font-size:12px;color:#8899aa;">中文释义</label>';
+  html += '<input id="vgMeaning' + idx + '" value="' + escapeHtml(vg.meaning) + '" placeholder="中文释义，如 逐渐了解">';
+  html += '<label style="font-size:12px;color:#8899aa;">例句</label>';
+  for (var j = 0; j < vg.examples.length; j++) {
+    html += '<div class="vg-edit-row">';
+    html += '<input class="vgEx' + idx + '" value="' + escapeHtml(vg.examples[j]) + '" placeholder="例句">';
+    html += '<button onclick="removeExRow(this)" title="删除">✕</button>';
+    html += '</div>';
+  }
+  html += '<button class="vg-add-btn" onclick="addExRow(' + idx + ')">+ 添加例句</button>';
+  html += '<div class="vg-edit-actions">';
+  html += '<button class="vg-edit-cancel" onclick="cancelVerbGroup(' + idx + ')">取消</button>';
+  html += '<button class="vg-edit-save" onclick="saveVerbGroup(' + idx + ')">💾 保存</button>';
+  html += '</div>';
+  html += '</div>';
+  
+  body.innerHTML = html;
+  body.parentElement.classList.add('open');
+  
+  // Store original state for cancel
+  body._origHTML = body.innerHTML;
+}
+
+function addExRow(idx) {
+  var form = document.querySelector('#vgb' + idx + ' .vg-edit-form');
+  var addBtn = document.querySelector('#vgb' + idx + ' .vg-add-btn');
+  var row = document.createElement('div');
+  row.className = 'vg-edit-row';
+  row.innerHTML = '<input class="vgEx' + idx + '" value="" placeholder="例句">' +
+    '<button onclick="removeExRow(this)" title="删除">✕</button>';
+  form.insertBefore(row, addBtn);
+}
+
+function removeExRow(btn) {
+  var row = btn.parentElement;
+  row.parentElement.removeChild(row);
+}
+
+function saveVerbGroup(idx) {
+  var item = data[currentIndex];
+  var verb = document.getElementById('vgVerb' + idx).value.trim();
+  var meaning = document.getElementById('vgMeaning' + idx).value.trim();
+  var exInputs = document.querySelectorAll('.vgEx' + idx);
+  var examples = [];
+  for (var i = 0; i < exInputs.length; i++) {
+    var val = exInputs[i].value.trim();
+    if (val) examples.push(val);
+  }
+  
+  if (!verb) { showToast('动词短语不能为空', true); return; }
+  
+  item.alts[idx] = { verb: verb, meaning: meaning, examples: examples };
+  saveStructuredCloudOverride();
+}
+
+function cancelVerbGroup(idx) {
+  var body = document.getElementById('vgb' + idx);
+  var vg = data[currentIndex].alts[idx];
+  var html = '';
+  for (var j = 0; j < vg.examples.length; j++) {
+    html += '<div class="alt-item">' + escapeHtml(vg.examples[j]) + '</div>';
+  }
+  body.innerHTML = html;
+}
+
+// ===== Structured Cloud Sync (alts + cn) =====
+function saveStructuredCloudOverride() {
+  var item = data[currentIndex];
+  var idx = String(currentIndex);
+  
+  // Build structured override object
+  var obj = { cn: item.cn, en: item.en, alts: item.alts,
+              phonetic: item.phonetic, keyPoints: item.keyPoints, context: item.context,
+              motherPattern: item.motherPattern };
+  if (item.hidden === true) obj.hidden = true;
+  if (item.hidden === false) obj.hidden = false;
+  cloudOverrides[idx] = obj;
+  
+  try { localStorage.setItem('flipped_overrides', JSON.stringify(cloudOverrides)); } catch(e) {}
+  
+  if (!cloudAvailable) { showToast('✅ 已保存到本地', false); render(); return; }
+  
+  var xhr = new XMLHttpRequest();
+  xhr.open('PUT', CLOUD_PUT_URL, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.setRequestHeader('X-Master-Key', CLOUD_API_KEY);
+  xhr.onload = function() {
+    if (xhr.status >= 200 && xhr.status < 300) {
+      showToast('✅ 已保存到云端', false);
+    } else {
+      cloudAvailable = false;
+      showToast('⚠️ 云端同步失败，已保存到本地', true);
+    }
+    render();
+  };
+  xhr.onerror = function() {
+    cloudAvailable = false;
+    showToast('⚠️ 网络异常，已保存到本地', true);
+    render();
+  };
+  xhr.send(JSON.stringify(cloudOverrides));
+}
+
+// ===== Utils =====
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ===== AI Translate Modal State =====
+var aiUpCount = 1;
+var aiDownCount = 1;
+var aiDirection = 'en2cn'; // 'en2cn' or 'cn2en'
+var aiIsTranslating = false;
+
+function openAITranslate() {
+  var overlay = document.getElementById('aiModalOverlay');
+  var item = data[currentIndex];
+  if (!item) return;
+
+  // Reset state
+  aiUpCount = 0;
+  aiDownCount = 0;
+  aiDirection = 'en2cn';
+  aiIsTranslating = false;
+
+  // Movie name
+  document.getElementById('aiMovieName').value = MOVIE_NAME;
+
+  // Direction
+  setAIDir('en2cn');
+
+  // Counters
+  document.getElementById('aiUpCount').textContent = '0';
+  document.getElementById('aiDownCount').textContent = '0';
+
+  // Extra
+  document.getElementById('aiExtra').value = '';
+
+  // System prompt
+  document.getElementById('aiSystemPrompt').value = getSystemPrompt();
+  document.getElementById('aiSystemPrompt').classList.remove('show');
+
+  // Loading
+  document.getElementById('aiLoading').style.display = 'none';
+  document.getElementById('aiActions').style.display = 'flex';
+
+  // Preview
+  updateAIPreview();
+
+  // Modal
+  overlay.classList.add('show');
+}
+
+function closeAITranslate(event) {
+  if (event && event.target !== document.getElementById('aiModalOverlay')) return;
+  document.getElementById('aiModalOverlay').classList.remove('show');
+}
+
+// ===== 粘贴豆包结果：手动录入替代自动AI =====
+function getDoubaoTemplate() {
+  var item = data[currentIndex];
+  var en = item ? (item.en || '') : '';
+  var cn = item ? (item.cn || '') : '';
+  return '请把下面这句话做英语学习解析，并严格按 JSON 格式输出（只输出 JSON，不要加多余解释）：\n\n'
+    + '【原句英文】\n' + en + '\n\n'
+    + '【中文参考】\n' + cn + '\n\n'
+    + '请按以下结构输出：\n'
+    + '{\n'
+    + '  "en": "原英文句（可微调）",\n'
+    + '  "cn": "中文翻译",\n'
+    + '  "phonetic": "美式音标，如 /flɪpt/",\n'
+    + '  "keyPoints": [\n'
+    + '    {"expression": "重点词组或句型", "explanation": "讲解与例句"}\n'
+    + '  ],\n'
+    + '  "alts": [\n'
+    + '    {"verb": "同义替换表达", "meaning": "中文含义"}\n'
+    + '  ],\n'
+    + '  "context": "用该句造一个生活化语境例句，并附中文",\n'
+    + '  "motherPattern": "可套用的母句模板，如 \'It takes courage to ...\'"\n'
+    + '}\n\n'
+    + '无法给出的字段留空字符串或空数组。';
+}
+
+function copyDoubaoTemplate() {
+  var txt = document.getElementById('doubaoTemplateBox').value;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(
+      function(){ showToast('✅ 模板已复制，去豆包粘贴提问', false); },
+      function(){ fallbackCopyText(txt); }
+    );
+  } else {
+    fallbackCopyText(txt);
+  }
+}
+
+function fallbackCopyText(txt) {
+  var ta = document.getElementById('doubaoTemplateBox');
+  ta.removeAttribute('readonly');
+  ta.select();
+  ta.setSelectionRange(0, ta.value.length);
+  try { document.execCommand('copy'); showToast('✅ 模板已复制', false); }
+  catch (e) { showToast('复制失败，请手动选择文本复制', true); }
+  ta.setAttribute('readonly', 'readonly');
+  window.getSelection().removeAllRanges();
+}
+
+function openDoubaoPaste() {
+  var item = data[currentIndex];
+  if (!item) return;
+  document.getElementById('doubaoTemplateBox').value = getDoubaoTemplate();
+  document.getElementById('doubaoPasteBox').value = '';
+  var st = document.getElementById('doubaoStatus');
+  st.style.display = 'none';
+  st.textContent = '';
+  document.getElementById('doubaoModalOverlay').classList.add('show');
+}
+
+function closeDoubaoPaste(event) {
+  if (event && event.target !== document.getElementById('doubaoModalOverlay')) return;
+  document.getElementById('doubaoModalOverlay').classList.remove('show');
+}
+
+function showDoubaoStatus(msg, isError) {
+  var st = document.getElementById('doubaoStatus');
+  st.style.display = 'block';
+  st.style.color = isError ? '#ffb3b3' : '#bdf5c8';
+  st.textContent = msg;
+}
+
+// 取 obj 中多个候选 key 的第一个非空值
+function _pick(obj, keys) {
+  for (var i = 0; i < keys.length; i++) {
+    var v = obj[keys[i]];
+    if (v !== undefined && v !== null && v !== '') return v;
+  }
+  return '';
+}
+
+// 归一化 keyPoints 为 [{expression, explanation}]
+function _normKeyPoints(v) {
+  if (!v) return [];
+  if (typeof v === 'string') return [{ expression: v, explanation: '' }];
+  if (!Array.isArray(v)) return [];
+  var out = [];
+  for (var i = 0; i < v.length; i++) {
+    var it = v[i];
+    if (typeof it === 'string') {
+      out.push({ expression: it, explanation: '' });
+    } else if (it && typeof it === 'object') {
+      out.push({
+        expression: it.expression || it.expr || it.term || it.key || '',
+        explanation: it.explanation || it.desc || it.note || it.mean || it.meaning || ''
+      });
+    }
+  }
+  return out;
+}
+
+// 归一化 alts 为 [{verb, meaning}]
+function _normAlts(v) {
+  if (!v) return [];
+  if (typeof v === 'string') return [{ verb: v, meaning: '' }];
+  if (!Array.isArray(v)) return [];
+  var out = [];
+  for (var i = 0; i < v.length; i++) {
+    var it = v[i];
+    if (typeof it === 'string') {
+      out.push({ verb: it, meaning: '' });
+    } else if (it && typeof it === 'object') {
+      out.push({
+        verb: it.verb || it.expression || it.alt || it.word || '',
+        meaning: it.meaning || it.explanation || it.note || it.desc || ''
+      });
+    }
+  }
+  return out;
+}
+
+// 文字标签兜底解析：「字段名：内容」逐行
+function _parseDoubaoByLabels(text) {
+  var labels = [
+    { key: 'cn', rx: /^(中文翻译?|翻译|cn|中文)\s*[:：]/i },
+    { key: 'en', rx: /^(英文|原句|en|english)\s*[:：]/i },
+    { key: 'phonetic', rx: /^(音标|phonetic)\s*[:：]/i },
+    { key: 'keyPoints', rx: /^(重点|解析|keypoints?|重点解析)\s*[:：]/i },
+    { key: 'alts', rx: /^(其他说法|同义|替换|alts?)\s*[:：]/i },
+    { key: 'context', rx: /^(语境|context|语境串联)\s*[:：]/i },
+    { key: 'motherPattern', rx: /^(母句|模板|mother_?pattern)\s*[:：]/i }
+  ];
+  var result = {};
+  var cur = null;
+  var lines = text.split(/\r?\n/);
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;
+    var found = null;
+    for (var j = 0; j < labels.length; j++) {
+      if (labels[j].rx.test(line)) { found = labels[j]; break; }
+    }
+    if (found) {
+      cur = found.key;
+      var val = line.replace(found.rx, '').trim();
+      if (!result[cur]) result[cur] = '';
+      if (val) result[cur] += (result[cur] ? '\n' : '') + val;
+    } else if (cur) {
+      result[cur] += (result[cur] ? '\n' : '') + line;
+    }
+  }
+  result.keyPoints = _normKeyPoints(result.keyPoints);
+  result.alts = _normAlts(result.alts);
+  return result;
+}
+
+function parseDoubaoPaste(raw) {
+  if (!raw || !raw.trim()) return { error: '请先粘贴豆包的回复内容' };
+  var obj = extractArkJSON(raw);
+  if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+    var en = _pick(obj, ['en', 'english', '英文', '原句']);
+    var cn = _pick(obj, ['cn', 'chinese', '中文', '翻译', '中文翻译']);
+    var phonetic = _pick(obj, ['phonetic', '音标']);
+    var keyPoints = _normKeyPoints(_pick(obj, ['keyPoints', 'keypoints', '重点', '重点解析', '解析']));
+    var alts = _normAlts(_pick(obj, ['alts', 'alternatives', '其他说法', '同义', '同义替换', '替换']));
+    var context = _pick(obj, ['context', '语境', '语境串联']);
+    var motherPattern = _pick(obj, ['motherPattern', 'mother_pattern', '母句', '母句模板', '模板']);
+    if (cn || en || phonetic || keyPoints.length || alts.length || context || motherPattern) {
+      return { en: en || '', cn: cn || '', phonetic: phonetic || '', keyPoints: keyPoints,
+               alts: alts, context: context || '', motherPattern: motherPattern || '' };
+    }
+  }
+  // 标签兜底
+  var byLabel = _parseDoubaoByLabels(raw);
+  if (byLabel.cn || byLabel.en || byLabel.phonetic || byLabel.keyPoints.length
+      || byLabel.alts.length || byLabel.context || byLabel.motherPattern) {
+    return byLabel;
+  }
+  return { error: '无法解析豆包回复，请确认粘贴的是完整回复（JSON 或带「字段名：」的格式）' };
+}
+
+function applyDoubaoPaste() {
+  var raw = document.getElementById('doubaoPasteBox').value;
+  var parsed = parseDoubaoPaste(raw);
+  if (parsed.error) { showDoubaoStatus(parsed.error, true); return; }
+
+  var item = data[currentIndex];
+  if (!item) return;
+  if (parsed.cn) item.cn = parsed.cn;
+  if (parsed.en) item.en = parsed.en;
+  if (parsed.phonetic) item.phonetic = parsed.phonetic;
+  if (parsed.keyPoints && parsed.keyPoints.length) item.keyPoints = parsed.keyPoints;
+  if (parsed.alts && parsed.alts.length) item.alts = parsed.alts;
+  if (parsed.context) item.context = parsed.context;
+  if (parsed.motherPattern) item.motherPattern = parsed.motherPattern;
+
+  saveTranslationCloud(currentIndex);
+  var aiBtn = document.getElementById('aiBtn');
+  if (aiBtn) aiBtn.classList.add('has-result');
+
+  var parts = [];
+  if (parsed.cn) parts.push('中文');
+  if (parsed.en) parts.push('英文');
+  if (parsed.phonetic) parts.push('音标');
+  if (parsed.keyPoints && parsed.keyPoints.length) parts.push('重点×' + parsed.keyPoints.length);
+  if (parsed.alts && parsed.alts.length) parts.push('同义×' + parsed.alts.length);
+  if (parsed.context) parts.push('语境');
+  if (parsed.motherPattern) parts.push('母句模板');
+
+  closeDoubaoPaste();
+  render();
+  showToast('✅ 已解析：' + parts.join('、') + ' → 写入并同步云端', false);
+}
+
+function setAIDir(dir) {
+  aiDirection = dir;
+  document.getElementById('aiDirEN').classList.toggle('active', dir === 'en2cn');
+  document.getElementById('aiDirCN').classList.toggle('active', dir === 'cn2en');
+
+  // Show/hide CN preview based on direction
+  var cnPreview = document.getElementById('aiPreviewCN');
+  cnPreview.style.display = (dir === 'cn2en') ? 'block' : 'none';
+
+  // Update system prompt
+  document.getElementById('aiSystemPrompt').value = getSystemPrompt();
+
+  // Update preview content
+  updateAIPreview();
+}
+
+function adjRange(which, delta) {
+  if (which === 'up') {
+    aiUpCount = Math.max(0, Math.min(2, aiUpCount + delta));
+    document.getElementById('aiUpCount').textContent = aiUpCount;
+  } else {
+    aiDownCount = Math.max(0, Math.min(2, aiDownCount + delta));
+    document.getElementById('aiDownCount').textContent = aiDownCount;
+  }
+  updateAIPreview();
+}
+
+function updateAIPreview() {
+  var item = data[currentIndex];
+  if (!item) return;
+
+  var lines = [];
+  var cnLines = [];
+
+  // Collect context lines
+  for (var i = currentIndex - aiUpCount; i <= currentIndex + aiDownCount; i++) {
+    if (i >= 0 && i < data.length) {
+      var d = data[i];
+      if (aiDirection === 'en2cn') {
+        lines.push(d.en);
+      } else {
+        lines.push(d.cn);
+      }
+      cnLines.push(d.cn);
+    }
+  }
+
+  var previewEN = document.getElementById('aiPreviewEN');
+  var previewCN = document.getElementById('aiPreviewCN');
+
+  if (aiDirection === 'en2cn') {
+    previewEN.value = lines.join(', ');
+    previewCN.value = cnLines.join('');
+  } else {
+    previewEN.value = lines.join('');
+    previewCN.value = cnLines.join('');
+  }
+}
+
+function syncPreviewToCN() {
+  // Placeholder: could auto-translate or just keep as editable
+}
+
+function toggleAdvancedPrompt() {
+  var box = document.getElementById('aiSystemPrompt');
+  box.classList.toggle('show');
+  if (box.classList.contains('show')) {
+    box.value = getSystemPrompt();
+  }
+}
+
+function getSystemPrompt() {
+  var movie = document.getElementById('aiMovieName').value || MOVIE_NAME;
+  if (aiDirection === 'en2cn') {
+    return '你是电影《' + movie + '》的英语字幕翻译助手。翻译以下英文，返回严格 JSON（只返回 JSON，不要加任何其他文字）：\n\n'
+      + '{\n'
+      + '  "cn": "中文翻译（电影语境下自然流畅，符合人物性格和场景）",\n'
+      + '  "phonetic": "美音音标（IPA格式）",\n'
+      + '  "keyPoints": [\n'
+      + '    {"expression": "原文中的重点词组/句型", "explanation": "中文解析"}\n'
+      + '  ],\n'
+      + '  "alts": [\n'
+      + '    {"verb": "核心动词/短语", "meaning": "中文含义", "examples": ["同义替换句1", "同义替换句2"]}\n'
+      + '  ],\n'
+      + '  "context": "语境串联：一句话说明这句话在《' + movie + '》电影场景中的背景与情感"\n'
+      + '}';
+  } else {
+    return '你是中译英翻译助手。将以下中文翻译为地道英文（符合电影口语风格），返回严格 JSON（只返回 JSON，不要加任何其他文字）：\n\n'
+      + '{\n'
+      + '  "en": "英文翻译",\n'
+      + '  "cn": "保留原中文",\n'
+      + '  "keyPoints": [\n'
+      + '    {"expression": "中文重点表达", "explanation": "用法解析"}\n'
+      + '  ],\n'
+      + '  "alts": [\n'
+      + '    {"verb": "英文核心词", "meaning": "中文含义", "examples": ["英文替换句1", "英文替换句2"]}\n'
+      + '  ],\n'
+      + '  "context": "语境串联"'
+      + '\n}';
+  }
+}
+
+function getTranslateMessages() {
+  var systemPrompt = document.getElementById('aiSystemPrompt').value || getSystemPrompt();
+  var previewText = document.getElementById('aiPreviewEN').value.trim();
+  var cnPreview = document.getElementById('aiPreviewCN').value.trim();
+  var extra = document.getElementById('aiExtra').value.trim();
+
+  if (!previewText) { showToast('翻译内容不能为空', true); return null; }
+
+  var userMsg = '翻译：\n' + previewText;
+  if (aiDirection === 'cn2en' && cnPreview) {
+    userMsg = '翻译以下中文：\n' + cnPreview;
+  }
+  if (extra) userMsg += '\n\n额外要求：' + extra;
+
+  return [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userMsg }
+  ];
+}
+
+async function doTranslate() {
+  if (aiIsTranslating) return;
+  var messages = getTranslateMessages();
+  if (!messages) return;
+
+  aiIsTranslating = true;
+  document.getElementById('aiLoading').style.display = 'block';
+  document.getElementById('aiActions').style.display = 'none';
+  document.getElementById('aiBtnTranslate').disabled = true;
+  document.getElementById('aiBtnMerge').disabled = true;
+
+  try {
+    var result = await callTranslateAPI(messages);
+
+    if (result.error) {
+      showToast('翻译失败：' + result.error, true);
+      return;
+    }
+
+    if (result.warning) showToast(result.warning, false);
+
+    // Save to current sentence (saveTranslationResult internally calls saveTranslationCloud)
+    saveTranslationResult(currentIndex, result.result);
+
+    document.getElementById('aiBtn').classList.add('has-result');
+    showToast('✅ 翻译完成！已写入当前字幕');
+    closeAITranslate();
+    render();
+  } catch (e) {
+    showToast('翻译出错：' + e.message, true);
+  } finally {
+    aiIsTranslating = false;
+    document.getElementById('aiLoading').style.display = 'none';
+    document.getElementById('aiActions').style.display = 'flex';
+    document.getElementById('aiBtnTranslate').disabled = false;
+    document.getElementById('aiBtnMerge').disabled = false;
+  }
+}
+
+async function doMergeTranslate() {
+  if (aiIsTranslating) return;
+  var messages = getTranslateMessages();
+  if (!messages) return;
+
+  aiIsTranslating = true;
+  document.getElementById('aiLoading').style.display = 'block';
+  document.getElementById('aiActions').style.display = 'none';
+  document.getElementById('aiBtnTranslate').disabled = true;
+  document.getElementById('aiBtnMerge').disabled = true;
+
+  try {
+    var result = await callTranslateAPI(messages);
+
+    if (result.error) {
+      showToast('翻译失败：' + result.error, true);
+      return;
+    }
+
+    if (result.warning) showToast(result.warning, false);
+
+    // Collect indices to merge
+    var indices = [];
+    for (var i = currentIndex - aiUpCount; i <= currentIndex + aiDownCount; i++) {
+      if (i >= 0 && i < data.length) indices.push(i);
+    }
+
+    // Perform merge
+    mergeSentences(indices, result.result);
+
+    document.getElementById('aiBtn').classList.add('has-result');
+    showToast('✅ 合并完成！' + indices.length + ' 条字幕已合并为 1 条');
+    closeAITranslate();
+    render();
+  } catch (e) {
+    showToast('合并出错：' + e.message, true);
+  } finally {
+    aiIsTranslating = false;
+    document.getElementById('aiLoading').style.display = 'none';
+    document.getElementById('aiActions').style.display = 'flex';
+    document.getElementById('aiBtnTranslate').disabled = false;
+    document.getElementById('aiBtnMerge').disabled = false;
+  }
+}
+
+// ===== AI 请求：节流 + 指数退避重试 =====
+var lastArkRequestTs = 0;          // 上次发起请求的时间戳
+var MIN_ARK_INTERVAL = 5000;       // 两次请求最小间隔(ms)，防连点打爆方舟限流(RPM)
+var MAX_ARK_RETRY = 3;             // 429/5xx/网络错误 最多自动重试次数
+
+function sleep(ms) {
+  return new Promise(function(r) { setTimeout(r, ms); });
+}
+
+// 更新 AI 弹窗加载文案
+function setAiLoadingText(txt) {
+  var el = document.getElementById('aiLoading');
+  if (el) el.textContent = txt;
+}
+
+// 读取代理地址（Cloudflare Worker 等）；为空则回退直调火山方舟
+function getProxyUrl() {
+  return (localStorage.getItem('flipped_proxy_url') || '').trim();
+}
+
+// 带节流 + 退避重试的 fetch。429 / 5xx / 网络错误自动重试；
+// 重试耗尽后：429/5xx 仍返回最后的 resp 交外层处理，网络错误则抛出。
+var arkChain = Promise.resolve();   // 全局串行队列：所有翻译请求严格依次发送，避免并发触发方舟 429 限流
+
+// 用 XMLHttpRequest 发请求（替代 fetch）。
+// 原因：部分手机在「PWA 独立运行模式(添加到主屏幕)」下，跨域 fetch 会稳定报
+// "Failed to fetch"（iOS Safari 已知问题），而 XMLHttpRequest 不受该问题影响，CORS 行为一致。
+// 返回与 fetch 的 Response 兼容的对象 {ok, status, headers.get, text(), json()}，
+// 使上层 callTranslateAPI 与重试逻辑无需改动。
+function xhrRequest(url, options) {
+  return new Promise(function (resolve, reject) {
+    var xhr = new XMLHttpRequest();
+    xhr.open(options.method || 'POST', url, true);
+    var headers = options.headers || {};
+    Object.keys(headers).forEach(function (k) { xhr.setRequestHeader(k, headers[k]); });
+    xhr.timeout = (options.__timeout || 90000);
+    xhr.onload = function () {
+      var hdrs = {};
+      var raw = xhr.getAllResponseHeaders() || '';
+      raw.trim().split(/[\r\n]+/).forEach(function (line) {
+        var i = line.indexOf(': ');
+        if (i > 0) hdrs[line.slice(0, i).toLowerCase()] = line.slice(i + 2);
+      });
+      var resp = {
+        ok: xhr.status >= 200 && xhr.status < 300,
+        status: xhr.status,
+        headers: { get: function (k) { return hdrs[k.toLowerCase()] || null; } },
+        text: function () { return Promise.resolve(xhr.responseText); },
+        json: function () { return Promise.resolve(JSON.parse(xhr.responseText)); }
+      };
+      resolve(resp);
+    };
+    xhr.onerror = function () {
+      var err = new TypeError('Failed to fetch (XHR)');
+      err.cause = { code: 'XHR_NETWORK_ERROR', message: '手机网络/运营商拦截、DNS 解析失败或 TLS 校验失败' };
+      reject(err);
+    };
+    xhr.ontimeout = function () {
+      var err = new TypeError('Failed to fetch (XHR timeout)');
+      err.cause = { code: 'XHR_TIMEOUT' };
+      reject(err);
+    };
+    xhr.send(options.body || null);
+  });
+}
+
+// 统一请求入口：代理模式用 XHR（绕开 PWA 独立模式 fetch 失效），直连模式用 fetch
+async function doRequest(url, options) {
+  if (options && options.__xhr) return xhrRequest(url, options);
+  return fetch(url, options);
+}
+
+async function fetchArkWithRetry(url, options) {
+  var run = arkChain.then(function () { return _fetchArkWithRetry(url, options); });
+  arkChain = run.then(function () {}, function () {});
+  return run;
+}
+async function _fetchArkWithRetry(url, options) {
+  var lastErr = null;
+  for (var attempt = 0; attempt <= MAX_ARK_RETRY; attempt++) {
+    // 节流：与上次请求间隔不足则等待
+    var wait = MIN_ARK_INTERVAL - (Date.now() - lastArkRequestTs);
+    if (wait > 0) await sleep(wait);
+    lastArkRequestTs = Date.now();
+
+    if (attempt > 0) {
+      setAiLoadingText('⏳ 请求较多，正在第 ' + attempt + ' 次重试…（共 ' + MAX_ARK_RETRY + ' 次）');
+    }
+
+    var resp;
+    try {
+      resp = await doRequest(url, options);
+    } catch (e) {
+      lastErr = e;
+      if (attempt < MAX_ARK_RETRY) {
+        await sleep(Math.round(1000 * Math.pow(1.8, attempt))); // 1s,1.8s,3.2s
+        continue;
+      }
+      throw e; // 网络错误，重试耗尽
+    }
+
+    // 429 或 5xx：可重试
+    if (resp.status === 429 || resp.status >= 500) {
+      if (attempt < MAX_ARK_RETRY) {
+        var retryAfter = parseInt(resp.headers.get('Retry-After') || '0', 10);
+        var backoff = retryAfter > 0 ? retryAfter * 1000 : Math.round(10000 * Math.pow(1.8, attempt)); // 10s,18s,32.4s 跨过方舟分钟级限流窗口
+        setAiLoadingText('⏳ 触发限流，' + Math.round(backoff / 1000) + ' 秒后自动重试…');
+        await sleep(backoff);
+        continue;
+      }
+      return resp; // 重试耗尽，交外层出错处理
+    }
+
+    return resp; // 成功或不可重试的 4xx
+  }
+  if (lastErr) throw lastErr;
+}
+
+// 从模型返回的 content 中提取 JSON（兼容：纯JSON / ```json 代码块 / 前后带解释文字 / 包裹数组）
+function extractArkJSON(text) {
+  if (!text) return null;
+  text = String(text).trim();
+  try { return JSON.parse(text); } catch (e) {}
+  var m = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (m) { try { return JSON.parse(m[1].trim()); } catch (e) {} }
+  var s = text.indexOf('{'), e = text.lastIndexOf('}');
+  if (s !== -1 && e > s) { try { return JSON.parse(text.slice(s, e + 1)); } catch (e2) {} }
+  var sa = text.indexOf('['), ea = text.lastIndexOf(']');
+  if (sa !== -1 && ea > sa) { try { return JSON.parse(text.slice(sa, ea + 1)); } catch (e3) {} }
+  return null;
+}
+
+async function callTranslateAPI(messages) {
+  var apiKey = getApiKey();
+  if (!apiKey) {
+    return { error: '请先设置火山方舟 API Key（点击 ⚙️）' };
+  }
+
+  var proxyUrl = getProxyUrl();
+  var body = {
+    model: 'ep-20260716161533-8s8wr',
+    messages: messages,
+    temperature: 0.7,
+    max_tokens: 4096
+  };
+
+  var apiUrl, fetchOpts;
+  if (proxyUrl) {
+    // 免预检简单请求 + Key 移入加密 body：
+    //  URL 保持纯净（不带 ?key=，部分手机网络会拦截含 key= 的 URL 明文），
+    //  Key 放入 POST body 的 _t 字段（TLS 加密，网络层不可见），
+    //  代理从 body._t 取 Key 转发方舟，并剥掉 _t 后转发干净请求体。
+    //  Content-Type 仍为 text/plain（CORS-safelisted 简单请求），浏览器直接 POST 不发 OPTIONS 预检。
+    apiUrl = proxyUrl;
+    var proxiedBody = Object.assign({}, body, { _t: apiKey });
+    fetchOpts = {
+      __xhr: true,
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      body: JSON.stringify(proxiedBody)
+    };
+  } else {
+    apiUrl = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
+    fetchOpts = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey
+      },
+      body: JSON.stringify(body)
+    };
+  }
+
+  var resp;
+  try {
+    resp = await fetchArkWithRetry(apiUrl, fetchOpts);
+  } catch (e) {
+    // Network error (CORS, DNS, connection refused, etc.)
+    var errMsg = e.message || String(e);
+    // 透出请求模式/地址/原始错误/底层错误码(cause)，方便定位根因
+    var isTMode = (apiUrl === proxyUrl);  // true=走了 body._t 免预检（确认前端已是最新版）
+    var causeInfo = e.cause ? ('｜cause=' + (e.cause.code || e.cause.message || JSON.stringify(e.cause))) : '';
+    var dbg = '（模式:' + (isTMode ? 'body._t免预检(已最新)' : '旧?key=模式(未刷新)') +
+              '｜实际请求地址: ' + (proxyUrl || '直连 ark.cn-beijing.volces.com') +
+              '｜原始错误: ' + errMsg.substring(0, 120) + causeInfo + '）';
+    if (errMsg.indexOf('Failed to fetch') !== -1 || errMsg.indexOf('NetworkError') !== -1 || errMsg.indexOf('Load failed') !== -1) {
+      if (!proxyUrl) {
+        return { error: '网络错误(CORS)：手机/PWA 无法直连火山方舟。请点 ⚙️ 填写「AI 代理地址」（部署好的代理链接）后重试。' + dbg };
+      }
+      return { error: '网络错误：无法连接代理地址。请检查 ⚙️ 里的代理地址是否正确、代理是否已部署并正常运行。' + dbg };
+    }
+    return { error: '网络错误：' + errMsg.substring(0, 200) };
+  }
+
+  if (!resp.ok) {
+    var errText = '';
+    try { errText = await resp.text(); } catch(e) {}
+    var errJson = null;
+    try { errJson = JSON.parse(errText); } catch(e) {}
+
+    if (resp.status === 401) {
+      return { error: 'API Key 无效(401)，请检查 Key 是否正确、是否已过期' };
+    }
+    if (resp.status === 403) {
+      return { error: '权限不足(403)，请在火山方舟控制台确认 Endpoint ep-20260716161533-8s8wr 已开通、Key 有该接入点权限' };
+    }
+    if (resp.status === 429) {
+      return { error: '请求频率超限(429)：已自动重试多次仍失败。请等待 1~2 分钟，或放慢连续点击的速度再试。' };
+    }
+
+    var detail = (errJson && errJson.error && errJson.error.message) ? errJson.error.message : errText.substring(0, 200);
+    return { error: 'API 返回 ' + resp.status + '：' + detail };
+  }
+
+  var json;
+  try {
+    json = await resp.json();
+  } catch (e) {
+    return { error: '无法解析API响应JSON' };
+  }
+
+  var content = json.choices?.[0]?.message?.content || '';
+  if (!content) {
+    return { error: 'API 返回空内容，可能被内容审核拦截' };
+  }
+
+  // 兼容模型各种输出格式（纯JSON / markdown 代码块 / 前后解释文字）
+  var parsed = extractArkJSON(content);
+  var warning = null;
+  if (parsed === null) {
+    // 模型未返回可解析 JSON：兜底按原文展示，避免"无报错也无结果"
+    var cnPreview = document.getElementById('aiPreviewCN');
+    var cnVal = cnPreview ? cnPreview.value.trim() : '';
+    if (aiDirection === 'cn2en') {
+      parsed = { en: content, cn: cnVal };
+    } else {
+      parsed = { cn: content };
+    }
+    warning = '⚠️ 模型返回非标准 JSON，已按原文展示（如显示异常可在 ⚙️ 调整提示词）';
+  }
+  return { result: parsed, raw: content, warning: warning };
+}
+
+// ===== API Key Management =====
+function getApiKey() {
+  return localStorage.getItem('flipped_ark_key') || '';
+}
+
+function toggleSettings() {
+  var modal = document.getElementById('settingsModal');
+  var isOpen = modal.classList.contains('show');
+  if (isOpen) {
+    modal.classList.remove('show');
+  } else {
+    document.getElementById('settingsApiKey').value = getApiKey();
+    var proxyEl = document.getElementById('settingsProxyUrl');
+    if (proxyEl) proxyEl.value = getProxyUrl();
+    modal.classList.add('show');
+  }
+}
+
+function saveApiKey() {
+  var key = document.getElementById('settingsApiKey').value.trim();
+  var proxyEl = document.getElementById('settingsProxyUrl');
+  var proxy = proxyEl ? proxyEl.value.trim() : '';
+
+  // 保存代理地址（独立于 Key，方便只配代理）
+  localStorage.setItem('flipped_proxy_url', proxy);
+
+  // 保存/清除 API Key
+  if (key) {
+    localStorage.setItem('flipped_ark_key', key);
+  } else {
+    localStorage.removeItem('flipped_ark_key');
+  }
+
+  document.getElementById('settingsModal').classList.remove('show');
+  updateSettingsBtn();
+  var msg = '✅ 设置已保存（仅存于此设备）';
+  if (proxy) msg += '　🔗 已启用代理：' + proxy;
+  showToast(msg);
+}
+
+function clearApiKey() {
+  localStorage.removeItem('flipped_ark_key');
+  document.getElementById('settingsApiKey').value = '';
+  updateSettingsBtn();
+  showToast('API Key 已清除');
+}
+
+function updateSettingsBtn() {
+  var btn = document.getElementById('settingsBtn');
+  var hasKey = !!getApiKey();
+  btn.classList.toggle('configured', hasKey);
+  btn.title = hasKey ? 'API Key 已配置' : '设置 API Key';
+}
+
+// 强制清除 Service Worker（旧 SW 不更新导致跨域 fetch 失败的终极自救）
+function clearServiceWorker() {
+  if (!('serviceWorker' in navigator)) {
+    showToast('当前环境不支持 Service Worker，直接刷新');
+    setTimeout(function() { window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now(); }, 800);
+    return;
+  }
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    if (!regs.length) {
+      showToast('未找到 Service Worker，直接刷新');
+      setTimeout(function() { window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now(); }, 800);
+      return;
+    }
+    regs.forEach(function(reg) { reg.unregister(); });
+    showToast('🧹 已清除 Service Worker，正在刷新…');
+    setTimeout(function() { window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now(); }, 1000);
+  });
+}
+
+// 显示当前激活的 SW 版本（用于排查跨域问题）
+setTimeout(function() {
+  var label = document.getElementById('swVersionLabel');
+  if (!label) return;
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    var url = navigator.serviceWorker.controller.scriptURL || '';
+    var m = url.match(/sw\.js\?v=(\d+)/);
+    label.textContent = m ? ('v' + m[1] + '（已激活）') : '自定义版本';
+  } else {
+    label.textContent = '未激活（原生模式，跨域不受影响 ✅）';
+  }
+}, 400);
+
+// 测试代理连接：用与翻译相同的「简单请求」方式直接 fetch，显示真实错误（含 net::ERR_* 根因）
+async function testProxyConnection() {
+  var proxyUrl = getProxyUrl();
+  var out = document.getElementById('proxyTestResult');
+  if (!out) return;
+  if (!proxyUrl) {
+    out.style.display = 'block';
+    out.style.color = '#ffb3b3';
+    out.textContent = '❌ 请先在上方填写「AI 代理地址」再测试';
+    return;
+  }
+  out.style.display = 'block';
+  out.style.color = '#cfe';
+  out.textContent = '🔄 测试中（用与翻译相同的简单请求方式，不发 OPTIONS 预检）…';
+    try {
+      // 与 callTranslateAPI 的 proxy 模式完全一致：纯代理 URL（不带 ?key=）、
+      // Key 放入 body._t（TLS 加密，绕开网络对 URL 含 key= 的拦截）、text/plain 简单请求。
+      var apiKey = getApiKey();
+      var testBody = { model: 'ep-20260716161533-8s8wr', messages: [{ role: 'user', content: 'hi' }], max_tokens: 1 };
+      if (apiKey) testBody._t = apiKey;
+      var r = await xhrRequest(proxyUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        body: JSON.stringify(testBody)
+      });
+      var txt = await r.text();
+      if (r.status === 200) {
+        out.style.color = '#9dffb0';
+        out.textContent = '✅ 代理连通且 Key 有效，翻译应已正常。\n' + txt.slice(0, 120);
+      } else if (r.status === 401) {
+        if (apiKey) {
+          out.style.color = '#ffd28a';
+          out.textContent = '⚠️ 代理可达，但方舟返回 401（Key 无效或模型未开通）。请检查 ⚙️ 里的 Key。\n' + txt.slice(0, 160);
+        } else {
+          out.style.color = '#9dffb0';
+          out.textContent = '✅ 代理可达（未带 Key，仅验证连通）。请点真实翻译确认。\n' + txt.slice(0, 160);
+        }
+      } else if (r.status === 400) {
+        out.style.color = '#ffd28a';
+        out.textContent = '⚠️ 代理可达，但请求被方舟拒绝（status=400）。请检查 Key 与模型。\n' + txt.slice(0, 160);
+      } else {
+        out.style.color = '#ffd28a';
+        out.textContent = '⚠️ 代理返回 status=' + r.status + '，但网络可达。\n' + txt.slice(0, 160);
+      }
+  } catch (e) {
+    var cause = e.cause ? ('｜cause=' + (e.cause.code || e.cause.message || JSON.stringify(e.cause))) : '';
+    out.style.color = '#ffb3b3';
+    out.textContent = '❌ 连接失败：' + e.name + ' - ' + e.message + '\n' + cause +
+      '\n\n根据错误码判断根因：' +
+      '\n• ERR_NAME_NOT_RESOLVED / ERR_DNS / ENOTFOUND = 手机网络解析不到域名（DNS/网络问题）' +
+      '\n• ERR_CONNECTION_REFUSED / ERR_ABORTED = 被网络代理/防火墙拦截' +
+      '\n• net::ERR_CERT = 证书问题' +
+      '\n• 仍 Failed to fetch 且无 cause = 极可能是该手机网络禁用了此域名的 fetch（换 WiFi/流量试试）';
+  }
+}
+
+// Auto-update settings button on load
+setTimeout(function() { updateSettingsBtn(); }, 100);
+
+function saveTranslationResult(idx, result) {
+  var item = data[idx];
+  if (!item) return;
+
+  if (aiDirection === 'en2cn') {
+    if (result.cn) item.cn = result.cn;
+    if (result.phonetic) item.phonetic = result.phonetic;
+    if (result.keyPoints) item.keyPoints = result.keyPoints;
+    if (result.alts) item.alts = result.alts;
+    if (result.context) item.context = result.context;
+  } else {
+    // cn2en
+    if (result.en) item.en = result.en;
+    if (result.cn) item.cn = result.cn;
+    if (result.keyPoints) item.keyPoints = result.keyPoints;
+    if (result.alts) item.alts = result.alts;
+    if (result.context) item.context = result.context;
+  }
+
+  // Preserve existing fields if not provided
+  // (already handled by not overwriting)
+
+  // Save to cloud
+  saveTranslationCloud(idx);
+}
+
+function saveTranslationCloud(idx) {
+  var item = data[idx];
+  var overridesKey = String(idx);
+
+  var obj = { cn: item.cn, en: item.en, alts: item.alts,
+              phonetic: item.phonetic, keyPoints: item.keyPoints, context: item.context,
+              motherPattern: item.motherPattern };
+  if (item.hidden === true) obj.hidden = true;
+  if (item.hidden === false) obj.hidden = false;
+  cloudOverrides[overridesKey] = obj;
+
+  try { localStorage.setItem('flipped_overrides', JSON.stringify(cloudOverrides)); } catch(e) {}
+
+  if (!cloudAvailable) { showToast('✅ 已保存到本地', false); return; }
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('PUT', CLOUD_PUT_URL, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.setRequestHeader('X-Master-Key', CLOUD_API_KEY);
+  xhr.onload = function() {
+    if (xhr.status >= 200 && xhr.status < 300) {
+      // done
+    } else {
+      cloudAvailable = false;
+      showToast('⚠️ 云端同步失败，已保存到本地', true);
+    }
+  };
+  xhr.onerror = function() {
+    cloudAvailable = false;
+    showToast('⚠️ 网络异常，已保存到本地', true);
+  };
+  xhr.send(JSON.stringify(cloudOverrides));
+}
+
+async function syncMergeToCloud() {
+  if (!cloudAvailable) {
+    showToast('⚠️ 云端不可用，合并结果仅保存在本地', true);
+    return;
+  }
+
+  try {
+    var resp = await fetch(CLOUD_PUT_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': CLOUD_API_KEY
+      },
+      body: JSON.stringify(cloudOverrides)
+    });
+
+    if (resp.ok) {
+      showToast('✅ 合并已同步到云端，其他设备刷新即可看到', false);
+    } else {
+      var errText = '';
+      try { errText = await resp.text(); } catch(e) {}
+      console.error('[syncMerge] PUT failed:', resp.status, errText.substring(0, 200));
+      cloudAvailable = false;
+      showToast('⚠️ 云端同步失败(' + resp.status + ')，已保存到本地。请稍后重试', true);
+    }
+  } catch(e) {
+    console.error('[syncMerge] network error:', e.message);
+    cloudAvailable = false;
+    showToast('⚠️ 网络异常，合并仅保存在本地。联网后打开APP会自动重试', true);
+  }
+}
+
+function mergeSentences(indices, result) {
+  if (!indices || indices.length === 0) return;
+
+  if (indices.length === 1) {
+    saveTranslationResult(indices[0], result);
+    return;
+  }
+
+  // Ensure indices are sorted and valid
+  indices = indices.slice().filter(function(i) {
+    return i >= 0 && i < data.length;
+  }).sort(function(a, b) { return a - b; });
+
+  if (indices.length === 0) return;
+
+  var insertPos = indices[0];
+  var endPos = indices[indices.length - 1];
+
+  console.log('[merge] indices:', indices, 'insertPos:', insertPos, 'currentIndex before:', currentIndex);
+
+  // Build merged English from all selected sentences
+  var mergedEN = '';
+  for (var i = 0; i < indices.length; i++) {
+    var d = data[indices[i]];
+    if (!d) continue;
+    var en = (d.en || '').trim();
+    if (!en) continue;
+    if (i > 0) {
+      var prev = data[indices[i-1]];
+      var prevEN = (prev.en || '').trim();
+      var lastCh = prevEN.charAt(prevEN.length - 1);
+      if (lastCh === ',' || lastCh === ';' || prevEN.endsWith('...')) {
+        mergedEN += ' ';
+      } else {
+        mergedEN += ', ';
+      }
+    }
+    mergedEN += en;
+  }
+
+  // Build merged Chinese
+  var mergedCN = '';
+  if (aiDirection === 'en2cn') {
+    mergedCN = result.cn || '';
+  } else if (aiDirection === 'cn2en' && data[indices[0]] && data[indices[0]].cn) {
+    mergedCN = data[indices[0]].cn;
+  }
+
+  // Update first sentence with merged content
+  data[insertPos] = {
+    cn: mergedCN || '待翻译',
+    en: mergedEN,
+    alts: result.alts || [],
+    phonetic: result.phonetic || '',
+    keyPoints: result.keyPoints || [],
+    context: result.context || '',
+    hidden: false
+  };
+
+  // Mark the rest as hidden (merged into the first)
+  for (var i = 1; i < indices.length; i++) {
+    var hi = indices[i];
+    data[hi] = {
+      cn: data[hi].cn,
+      en: data[hi].en,
+      alts: data[hi].alts,
+      phonetic: data[hi].phonetic,
+      keyPoints: data[hi].keyPoints,
+      context: data[hi].context,
+      hidden: true
+    };
+  }
+
+  console.log('[merge] mergedEN:', mergedEN.substring(0, 80));
+  console.log('[merge] mergedCN:', mergedCN.substring(0, 80));
+
+  // currentIndex should point to the merged (first) sentence
+  if (currentIndex >= insertPos && currentIndex <= endPos) {
+    currentIndex = insertPos;
+  }
+  if (currentIndex < 0) currentIndex = 0;
+  if (currentIndex >= data.length) currentIndex = data.length - 1;
+
+  console.log('[merge] currentIndex after:', currentIndex);
+
+  // Save position
+  try { localStorage.setItem('flipped_index', currentIndex); } catch(e) {}
+
+  // Save merged entry override
+  cloudOverrides[String(insertPos)] = {
+    cn: data[insertPos].cn,
+    en: data[insertPos].en,
+    alts: data[insertPos].alts,
+    phonetic: data[insertPos].phonetic,
+    keyPoints: data[insertPos].keyPoints,
+    context: data[insertPos].context,
+    hidden: false
+  };
+
+  // Save hidden flags for merged-away sentences
+  for (var i = 1; i < indices.length; i++) {
+    var hi = indices[i];
+    cloudOverrides[String(hi)] = {
+      cn: data[hi].cn,
+      en: data[hi].en,
+      alts: data[hi].alts,
+      phonetic: data[hi].phonetic,
+      keyPoints: data[hi].keyPoints,
+      context: data[hi].context,
+      hidden: true
+    };
+  }
+
+  // Mark sync format version
+  cloudOverrides.__v = 2;
+
+  try { localStorage.setItem('flipped_overrides', JSON.stringify(cloudOverrides)); } catch(e) {}
+
+  console.log('[merge] cloudOverrides keys:', Object.keys(cloudOverrides));
+
+  // Rebuild visible indices first (so UI updates immediately)
+  rebuildVisibleIndices();
+
+  // Sync to cloud with proper error handling
+  syncMergeToCloud();
+}
+
+// ===== Boot =====
+document.addEventListener('DOMContentLoaded', init);
+
+// ===== PWA: Check for updates =====
+function checkForUpdates() {
+  var btn = document.getElementById('updateBtn');
+  btn.textContent = '⏳ 检查中...';
+  btn.disabled = true;
+  
+  // 清除所有缓存
+  if ('caches' in window) {
+    caches.keys().then(function(names) {
+      names.forEach(function(name) {
+        caches.delete(name);
+      });
+    });
+  }
+  
+  // 检查 Service Worker 更新
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+      registrations.forEach(function(registration) {
+        registration.update();
+      });
+    });
+  }
+  
+  // 1秒后强制刷新页面（加时间戳避免缓存）
+  setTimeout(function() {
+    btn.textContent = '🔄 刷新中...';
+    var url = window.location.href.split('?')[0];
+    window.location.href = url + '?t=' + Date.now();
+  }, 1000);
+}
+
+// ===== PWA: Register Service Worker =====
+// 使用固定版本号而非 Date.now()，避免每次页面加载都触发新的 SW 安装导致死循环
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js?v=13').then(function(registration) {
+    // 主动检查更新，避免旧 SW 长期驻留设备
+    registration.update();
+    registration.addEventListener('updatefound', function() {
+      var newWorker = registration.installing;
+      if (!newWorker) return;
+      newWorker.addEventListener('statechange', function() {
+        if (newWorker.state === 'installed') {
+          showToast('🔄 Service Worker 已更新，正在自动刷新…', false);
+        }
+      });
+    });
+  }).catch(function(err) {
+    console.warn('SW 注册失败:', err);
+  });
+
+  // 新 SW 接管控制后，自动刷新一次页面，确保新逻辑（跨域代理放行）立即生效
+  navigator.serviceWorker.addEventListener('controllerchange', function() {
+    window.location.reload();
+  });
+}
+</script>
+</body>
+</html>

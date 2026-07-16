@@ -1,0 +1,24 @@
+{
+  "name": "怦然心动 · 英语学习",
+  "short_name": "怦然心动",
+  "description": "《Flipped》电影双语字幕英语学习工具，含正式/口语/自然替换说法",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a1a2e",
+  "theme_color": "#e94560",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='36' fill='%2316213e'/><text x='96' y='120' text-anchor='middle' font-size='96' fill='%23e94560'>🎬</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='96' fill='%2316213e'/><text x='256' y='320' text-anchor='middle' font-size='280' fill='%23e94560'>🎬</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

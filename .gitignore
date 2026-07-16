@@ -1,0 +1,12 @@
+# 依赖（本项目为纯静态，无需 node_modules）
+node_modules/
+
+# 操作系统/编辑器
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# 本地缓存/打包产物
+*.zip
+.workbuddy/
