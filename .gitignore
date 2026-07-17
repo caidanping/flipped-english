@@ -10,3 +10,6 @@ Thumbs.db
 # 本地缓存/打包产物
 *.zip
 .workbuddy/
+
+# 云端同步运行时数据（由 APP 经 GitHub API 读写，不进 git）
+cloud/
