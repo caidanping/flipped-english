@@ -1341,7 +1341,7 @@ async function ghWrite(overrides) {
 }
 
 // ===== App version (每次重新部署前手动+1，并同步 version.txt) =====
-const APP_VERSION = '2026-07-17-21-05';
+const APP_VERSION = '2026-07-17-21-45';
 let appUpdateDismissed = false;
 
 // ===== Init =====
@@ -2202,31 +2202,34 @@ function getDoubaoTemplate() {
       + '无法给出的字段留空字符串或空数组。';
   }
 
-  // 多句：合并模板 —— 要求豆包把 N 句融合成「一句」英文
+  // 多句：合并模板 —— 保持原句分段与顺序，逐句意译，不重新组合
   var n = block.length;
-  var lines = [];
+  var segs = [];
   for (var k = 0; k < block.length; k++) {
     var it = block[k];
-    lines.push((k + 1) + '. ' + (it.en || '') + '   （中：' + (it.cn || '') + '）');
+    segs.push((k + 1) + '. ' + (it.en || '') + '   （原中文：' + (it.cn || '') + '）');
   }
-  return '请把以下 ' + n + ' 句连续英文（来自电影《' + MOVIE_NAME + '》的相邻字幕）合并成「一句」自然通顺的英文，并做英语学习解析。严格按 JSON 格式输出（只输出 JSON，不要加多余解释）：\n\n'
-    + '【待合并的连续字幕】\n' + lines.join('\n') + '\n\n'
-    + '要求：\n'
-    + '- en：把上面 ' + n + ' 句融合改写成「一句」连贯的英文（不是逐句罗列），作为合并后的整句\n'
-    + '- cn：这整句的中文翻译\n'
-    + '- 其余字段按下方结构输出\n\n'
+  return '下面是一段连续字幕（共 ' + n + ' 句，来自电影《' + MOVIE_NAME + '》），不同说话人之间用「 - 」分隔。\n'
+    + '请做英语学习解析，并严格按 JSON 格式输出（只输出 JSON，不要加多余解释）。\n\n'
+    + '【连续字幕（保持原顺序）】\n' + segs.join('\n') + '\n\n'
+    + '翻译要求（非常重要）：\n'
+    + '- 严格保持原句的句段结构与先后顺序，逐句翻译；可以意译让中文更自然，但【禁止】重新组合、改写叙事、或把多句融合成一句话。\n'
+    + '- 不同说话人之间一律用「 - 」分隔，与原文一致，不要改成逗号或句号连接。\n'
+    + '- en：保持原文英文分段，用「 - 」连接各句（可微调标点，但不得改写叙事）。例如：句1 - 句2 - 句3\n'
+    + '- cn：逐句对应翻译，同样用「 - 」分隔各句。例如：译文1 - 译文2 - 译文3\n'
+    + '- 其余字段（keyPoints/alts/context）可针对整段或任一句给出。\n\n'
     + '请按以下结构输出：\n'
     + '{\n'
-    + '  "en": "合并后的一整句英文",\n'
-    + '  "cn": "中文翻译",\n'
-    + '  "phonetic": "美式音标，如 /flɪpt/",\n'
+    + '  "en": "保持分段的英文，用 - 连接，例如：句1 - 句2 - 句3",\n'
+    + '  "cn": "保持分段的中文，用 - 连接，例如：译文1 - 译文2 - 译文3",\n'
+    + '  "phonetic": "美式音标（整段或代表性句子，可留空）",\n'
     + '  "keyPoints": [\n'
     + '    {"expression": "重点词组或句型", "explanation": "讲解与例句"}\n'
     + '  ],\n'
     + '  "alts": [\n'
     + '    {"verb": "同义替换表达", "meaning": "中文含义"}\n'
     + '  ],\n'
-    + '  "context": "用该句造一个生活化语境例句，并附中文",\n'
+    + '  "context": "用整段造一个生活化语境例句，并附中文",\n'
     + '}\n\n'
     + '无法给出的字段留空字符串或空数组。';
 }
@@ -2517,7 +2520,7 @@ function updateAIPreview() {
   var previewCN = document.getElementById('aiPreviewCN');
 
   if (aiDirection === 'en2cn') {
-    previewEN.value = lines.join(', ');
+    previewEN.value = lines.join(' - ');
     previewCN.value = cnLines.join('');
   } else {
     previewEN.value = lines.join('');
@@ -2540,9 +2543,10 @@ function toggleAdvancedPrompt() {
 function getSystemPrompt() {
   var movie = document.getElementById('aiMovieName').value || MOVIE_NAME;
   if (aiDirection === 'en2cn') {
-    return '你是电影《' + movie + '》的英语字幕翻译助手。翻译以下英文，返回严格 JSON（只返回 JSON，不要加任何其他文字）：\n\n'
+    return '你是电影《' + movie + '》的英语字幕翻译助手。翻译以下英文，返回严格 JSON（只返回 JSON，不要加任何其他文字）。\n\n'
+      + '【重要】若原文包含多句（不同说话人之间用「 - 」分隔），请逐句翻译、保持各自的独立性，不要融合改写成一句话。\n\n'
       + '{\n'
-      + '  "cn": "中文翻译（电影语境下自然流畅，符合人物性格和场景）",\n'
+      + '  "cn": "中文翻译（电影语境下自然流畅，符合人物性格和场景；多句时用 - 分隔各句）",\n'
       + '  "phonetic": "美音音标（IPA格式）",\n'
       + '  "keyPoints": [\n'
       + '    {"expression": "原文中的重点词组/句型", "explanation": "中文解析"}\n'
@@ -3183,18 +3187,11 @@ function mergeSentences(indices, result) {
     var en = (d.en || '').trim();
     if (!en) continue;
     if (i > 0) {
-      var prev = data[indices[i-1]];
-      var prevEN = (prev.en || '').trim();
-      var lastCh = prevEN.charAt(prevEN.length - 1);
-      if (lastCh === ',' || lastCh === ';' || prevEN.endsWith('...')) {
-        mergedEN += ' ';
-      } else {
-        mergedEN += ', ';
-      }
+      mergedEN += ' - ';
     }
     mergedEN += en;
   }
-  // 优先采用 AI 合成的「一句」整句（复制提问模板路径由豆包返回融合后的 en）
+  // 优先采用 AI 返回的「分段保持原结构」的 en（复制提问模板路径由豆包返回，已用 - 分隔各句）
   if (result && result.en && result.en.trim()) mergedEN = result.en.trim();
 
   // Build merged Chinese
