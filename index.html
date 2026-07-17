@@ -1341,7 +1341,7 @@ async function ghWrite(overrides) {
 }
 
 // ===== App version (每次重新部署前手动+1，并同步 version.txt) =====
-const APP_VERSION = '2026-07-17-21-45';
+const APP_VERSION = '2026-07-17-22-40';
 let appUpdateDismissed = false;
 
 // ===== Init =====
@@ -2336,6 +2336,7 @@ function _normAlts(v) {
 
 // 文字标签兜底解析：「字段名：内容」逐行
 function _parseDoubaoByLabels(text) {
+  text = String(text).replace(/[“”]/g, '"');  // 智能引号转正，避免字段名识别失败
   var labels = [
     { key: 'cn', rx: /^(中文翻译?|翻译|cn|中文)\s*[:：]/i },
     { key: 'en', rx: /^(英文|原句|en|english)\s*[:：]/i },
@@ -2368,6 +2369,15 @@ function _parseDoubaoByLabels(text) {
   return result;
 }
 
+// 诊断用：把粘贴内容前若干字符转成可见形式，标注不可见字符的码点
+function _safeSnippet(s) {
+  if (!s) return '(空)';
+  var t = s.slice(0, 50).replace(/\r?\n/g, '⏎');
+  return t.replace(/[\u200B-\u200D\u00A0\uFEFF]/g, function (c) {
+    return '⟨U+' + c.charCodeAt(0).toString(16).toUpperCase() + '⟩';
+  });
+}
+
 function parseDoubaoPaste(raw) {
   if (!raw || !raw.trim()) return { error: '请先粘贴豆包的回复内容' };
   var obj = extractArkJSON(raw);
@@ -2389,7 +2399,7 @@ function parseDoubaoPaste(raw) {
       || byLabel.alts.length || byLabel.context) {
     return byLabel;
   }
-  return { error: '无法解析豆包回复，请确认粘贴的是完整回复（JSON 或带「字段名：」的格式）' };
+  return { error: '无法解析豆包回复，请确认粘贴的是完整回复（JSON 或带「字段名：」的格式）。开头片段：' + _safeSnippet(raw) };
 }
 
 async function applyDoubaoPaste() {
@@ -2794,17 +2804,58 @@ async function _fetchArkWithRetry(url, options) {
   if (lastErr) throw lastErr;
 }
 
-// 从模型返回的 content 中提取 JSON（兼容：纯JSON / ```json 代码块 / 前后带解释文字 / 包裹数组）
+// 从模型返回的 content 中提取 JSON。
+// 兼容各种移动端/桌面端变体：纯JSON / ```json 代码块(有无闭合围栏) /
+// 前后带解释文字 / 包裹数组 / 含 BOM·零宽字符·不间断空格 / 尾随逗号 / 智能引号。
 function extractArkJSON(text) {
   if (!text) return null;
-  text = String(text).trim();
-  try { return JSON.parse(text); } catch (e) {}
-  var m = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-  if (m) { try { return JSON.parse(m[1].trim()); } catch (e) {} }
-  var s = text.indexOf('{'), e = text.lastIndexOf('}');
-  if (s !== -1 && e > s) { try { return JSON.parse(text.slice(s, e + 1)); } catch (e2) {} }
-  var sa = text.indexOf('['), ea = text.lastIndexOf(']');
-  if (sa !== -1 && ea > sa) { try { return JSON.parse(text.slice(sa, ea + 1)); } catch (e3) {} }
+  // 1) 去除 BOM 与零宽/不间断空格（手机复制常带入，普通 .trim() 清不掉）
+  text = String(text)
+    .replace(/\uFEFF/g, '')                       // BOM U+FEFF
+    .replace(/[\u200B-\u200D]/g, '')                // 零宽空格/连字 U+200B~200D
+    .replace(/\u00A0/g, ' ')                            // 不间断空格 U+00A0 → 普通空格
+    .trim();
+  if (!text) return null;
+
+  // 2) 剥离 markdown 代码围栏（兼容缺闭合围栏）
+  text = _stripCodeFences(text);
+
+  // 3) 多策略解析：原始 → 截取 {…} → 截取 […]（每段都带尾随逗号/智能引号兜底）
+  return _tryParseJSON(text)
+      || _tryParseJSON(_braceSlice(text, '{', '}'))
+      || _tryParseJSON(_braceSlice(text, '[', ']'));
+}
+
+// 剥离 ``` 代码围栏：优先配对围栏，否则只去掉开头围栏
+function _stripCodeFences(t) {
+  var paired = t.match(/^[`]{3,}(?:json)?[^\n]*\n([\s\S]*?)\n?[`]{3,}/i);
+  if (paired) return paired[1].trim();
+  var openOnly = t.match(/^[`]{3,}(?:json)?[^\n]*\n?([\s\S]*)$/i);
+  if (openOnly) return openOnly[1].trim();
+  return t;
+}
+
+// 截取首个 open 到最后一个 close 之间的子串（容错前后多余文字）
+function _braceSlice(t, open, close) {
+  var s = t.indexOf(open), e = t.lastIndexOf(close);
+  return (s !== -1 && e > s) ? t.slice(s, e + 1) : '';
+}
+
+// 多策略 JSON.parse：原始 → 去尾随逗号 → 智能引号转正 → 两者叠加
+function _tryParseJSON(str) {
+  if (!str) return null;
+  var variants = [
+    str,
+    str.replace(/,(\s*[}\]])/g, '$1'),                 // 去对象/数组尾随逗号
+    str.replace(/[“”]/g, '"'),                    // 智能引号转正（仅作兜底）
+    str.replace(/,(\s*[}\]])/g, '$1').replace(/[“”]/g, '"')
+  ];
+  for (var i = 0; i < variants.length; i++) {
+    try {
+      var o = JSON.parse(variants[i]);
+      if (o && typeof o === 'object') return o;
+    } catch (e) {}
+  }
   return null;
 }
 
