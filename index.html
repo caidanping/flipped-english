@@ -1200,6 +1200,10 @@ const CLOUD_PUT_URL = 'https://api.jsonbin.io/v3/b/' + CLOUD_BIN_ID;
 let cloudOverrides = {};
 let cloudAvailable = true;
 
+// ===== App version (每次重新部署前手动+1，并同步 version.txt) =====
+const APP_VERSION = '2026-07-17-17-30';
+let appUpdateDismissed = false;
+
 // ===== Init =====
 function init() {
   if (typeof subtitleData === 'undefined' || !subtitleData || subtitleData.length === 0) {
@@ -2860,7 +2864,7 @@ function saveTranslationResult(idx, result) {
   saveTranslationCloud(idx);
 }
 
-function saveTranslationCloud(idx) {
+async function saveTranslationCloud(idx) {
   var item = data[idx];
   var overridesKey = String(idx);
 
@@ -2875,13 +2879,31 @@ function saveTranslationCloud(idx) {
 
   if (!cloudAvailable) { showToast('✅ 已保存到本地', false); return; }
 
+  // 读取云端最新 -> 合并其他句子的覆盖 -> 回写，避免手机/电脑各改不同句时互相覆盖
+  try {
+    var latest = await fetch(CLOUD_GET_URL + '&_t=' + Date.now(), {
+      headers: { 'X-Master-Key': CLOUD_API_KEY }, cache: 'no-store'
+    }).then(function(r) { return r.ok ? r.json() : null; });
+    if (latest) {
+      var latestRec = latest.record || latest;
+      if (latestRec && typeof latestRec === 'object') {
+        for (var k in latestRec) {
+          if (k === '__v') continue;
+          if (!(k in cloudOverrides)) cloudOverrides[k] = latestRec[k];
+        }
+      }
+    }
+  } catch(e) { /* 网络异常时仍用本地合并结果 */ }
+
+  cloudOverrides[overridesKey] = obj; // 合并后再次确保本句为本地最新
+
   var xhr = new XMLHttpRequest();
   xhr.open('PUT', CLOUD_PUT_URL, true);
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.setRequestHeader('X-Master-Key', CLOUD_API_KEY);
   xhr.onload = function() {
     if (xhr.status >= 200 && xhr.status < 300) {
-      // done
+      cloudAvailable = true;
     } else {
       cloudAvailable = false;
       showToast('⚠️ 云端同步失败，已保存到本地', true);
@@ -3112,6 +3134,58 @@ if ('serviceWorker' in navigator) {
     window.location.reload();
   });
 }
+
+// ===== 版本检查：发现新版本则提示用户手动更新 =====
+async function checkAppUpdate() {
+  if (appUpdateDismissed) return;
+  try {
+    var r = await fetch('version.txt?_t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) return;
+    var v = (await r.text()).trim();
+    if (v && v !== APP_VERSION) showAppUpdateBanner(v);
+  } catch(e) { /* version.txt 缺失或网络异常时静默跳过 */ }
+}
+
+function showAppUpdateBanner(v) {
+  var b = document.getElementById('appUpdateBanner');
+  if (!b) {
+    b = document.createElement('div');
+    b.id = 'appUpdateBanner';
+    b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#2563eb;color:#fff;padding:10px 14px;font-size:14px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.25);flex-wrap:wrap';
+    document.body.appendChild(b);
+  }
+  b.innerHTML = '🔔 发现新版本（' + v + '），点击更新以加载最新功能与内容 ' +
+    '<button onclick="applyAppUpdate()" style="background:#fff;color:#2563eb;border:none;padding:4px 12px;border-radius:6px;cursor:pointer;font-weight:600">立即更新</button> ' +
+    '<button onclick="dismissAppUpdate()" style="background:transparent;color:#fff;border:1px solid #fff;padding:4px 12px;border-radius:6px;cursor:pointer">稍后</button>';
+}
+
+function dismissAppUpdate() {
+  appUpdateDismissed = true;
+  var b = document.getElementById('appUpdateBanner');
+  if (b) b.style.display = 'none';
+}
+
+function applyAppUpdate() {
+  if ('caches' in window) {
+    caches.keys().then(function(ns) { ns.forEach(function(n) { caches.delete(n); }); });
+  }
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(regs) {
+      regs.forEach(function(r) { r.unregister(); });
+    });
+  }
+  var url = window.location.href.split('?')[0];
+  window.location.href = url + '?t=' + Date.now();
+}
+
+// ===== 切回前台：自动拉取云端最新内容（近实时同步）+ 检查新版本 =====
+checkAppUpdate();
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden) {
+    loadCloudOverrides();
+    checkAppUpdate();
+  }
+});
 </script>
 </body>
 </html>
