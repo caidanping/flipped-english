@@ -79,6 +79,21 @@ header .counter {
 .update-btn:active {
   background: rgba(255,255,255,0.1);
 }
+.sync-status {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  color: #8899aa;
+  white-space: nowrap;
+  font-family: inherit;
+  line-height: 1.4;
+}
+.sync-status.synced { color: #4caf50; border-color: rgba(76,175,80,0.4); }
+.sync-status.local  { color: #ffb74d; border-color: rgba(255,183,77,0.4); }
+.sync-status.error  { color: #ef5350; border-color: rgba(239,83,80,0.4); }
+.sync-status.syncing{ color: #4fc3f7; border-color: rgba(79,195,247,0.4); }
 .update-btn.has-update {
   background: rgba(76, 175, 80, 0.2);
   color: #4caf50;
@@ -990,6 +1005,7 @@ footer button:active {
   <div style="display:flex; align-items:center; gap:10px;">
     <button class="settings-btn" id="settingsBtn" onclick="toggleSettings()" title="设置API Key">⚙️</button>
     <button class="update-btn" id="cloudSyncBtn" onclick="forceRefreshCloud()" title="从云端强制刷新数据">☁️</button>
+    <span id="cloudSyncStatus" class="sync-status" title="云端同步状态">☁️ 待同步</span>
     <button class="update-btn" id="showHiddenBtn" onclick="toggleShowHidden()" title="显示/隐藏已合并记录">👁</button>
     <button class="update-btn" id="updateBtn" onclick="checkForUpdates()" title="检查更新">
       🔄
@@ -1201,7 +1217,7 @@ let cloudOverrides = {};
 let cloudAvailable = true;
 
 // ===== App version (每次重新部署前手动+1，并同步 version.txt) =====
-const APP_VERSION = '2026-07-17-17-30';
+const APP_VERSION = '2026-07-17-18-00';
 let appUpdateDismissed = false;
 
 // ===== Init =====
@@ -1369,14 +1385,6 @@ function render() {
     </div>`;
   }
 
-  // Mother pattern card (母句模板)
-  if (item.motherPattern) {
-    html += `<div class="card context-card">
-      <div class="card-label"><span class="icon">🧩</span> 母句模板</div>
-      <div class="context-text">${escapeHtml(item.motherPattern)}</div>
-    </div>`;
-  }
-
   // Alternatives card - 优先读取 data.js 中已有的 alts
   if (item.alts && item.alts.length > 0) {
     html += `<div class="card alt-card" id="altCard">
@@ -1409,7 +1417,7 @@ function render() {
   // Update AI button state
   var aiBtn = document.getElementById('aiBtn');
   if (aiBtn) {
-    var hasAI = item.phonetic || item.keyPoints || item.context || item.motherPattern || (item.alts && item.alts.length > 0);
+    var hasAI = item.phonetic || item.keyPoints || item.context || (item.alts && item.alts.length > 0);
     aiBtn.classList.toggle('has-result', !!hasAI);
   }
 
@@ -1633,7 +1641,6 @@ async function loadCloudOverrides() {
             if (val.phonetic) data[i].phonetic = val.phonetic;
             if (val.keyPoints) data[i].keyPoints = val.keyPoints;
             if (val.context) data[i].context = val.context;
-            if (val.motherPattern) data[i].motherPattern = val.motherPattern;
 
             // Apply hidden flag for merged sentences
             if (val.hidden === true) data[i].hidden = true;
@@ -1642,13 +1649,16 @@ async function loadCloudOverrides() {
         }
       }
       cloudAvailable = true;
+      setCloudSyncStatus('synced', '☁️ 已同步云端');
       try { localStorage.setItem('flipped_overrides', JSON.stringify(cloudOverrides)); } catch(e) {}
     } else {
       cloudAvailable = false;
+      setCloudSyncStatus('error', '⚠️ 同步失败');
       fallbackLocalOverrides();
     }
   } catch(e) {
     cloudAvailable = false;
+    setCloudSyncStatus('error', '⚠️ 同步失败');
     fallbackLocalOverrides();
   }
   rebuildVisibleIndices();
@@ -1686,6 +1696,7 @@ async function forceRefreshCloud() {
   var btn = document.getElementById('cloudSyncBtn');
   btn.textContent = '⏳';
   btn.disabled = true;
+  setCloudSyncStatus('syncing', '☁️ 同步中…');
 
   // Clear local cache first
   try { localStorage.removeItem('flipped_overrides'); } catch(e) {}
@@ -1701,6 +1712,7 @@ async function forceRefreshCloud() {
       cloudOverrides = json.record || json || {};
       if (Array.isArray(cloudOverrides)) cloudOverrides = {};
       cloudAvailable = true;
+      setCloudSyncStatus('synced', '☁️ 已同步云端');
 
       // Re-apply all overrides to data array
       for (var idx in cloudOverrides) {
@@ -1717,7 +1729,6 @@ async function forceRefreshCloud() {
           if (val.phonetic) data[i].phonetic = val.phonetic;
           if (val.keyPoints) data[i].keyPoints = val.keyPoints;
           if (val.context) data[i].context = val.context;
-          if (val.motherPattern) data[i].motherPattern = val.motherPattern;
           if (val.hidden === true) data[i].hidden = true;
           else if (val.hidden === false) data[i].hidden = false;
         }
@@ -1730,9 +1741,11 @@ async function forceRefreshCloud() {
       render();
       showToast('✅ 已从云端刷新（' + visibleIndices.length + ' 条可见）', false);
     } else {
+      setCloudSyncStatus('error', '⚠️ 同步失败');
       showToast('⚠️ 云端不可达(' + resp.status + ')，使用本地数据', true);
     }
   } catch(e) {
+    setCloudSyncStatus('error', '⚠️ 同步失败');
     showToast('⚠️ 网络异常，使用本地数据', true);
   }
 
@@ -1774,7 +1787,6 @@ function fallbackLocalOverrides() {
             if (val.phonetic) data[i].phonetic = val.phonetic;
             if (val.keyPoints) data[i].keyPoints = val.keyPoints;
             if (val.context) data[i].context = val.context;
-            if (val.motherPattern) data[i].motherPattern = val.motherPattern;
 
             if (val.hidden === true) data[i].hidden = true;
             else if (val.hidden === false) data[i].hidden = false;
@@ -1791,8 +1803,7 @@ async function saveCloudOverride(idx, newText) {
   
   // Store as structured object for consistency
   var obj = { cn: newText, en: item.en, alts: item.alts,
-              phonetic: item.phonetic, keyPoints: item.keyPoints, context: item.context,
-              motherPattern: item.motherPattern };
+              phonetic: item.phonetic, keyPoints: item.keyPoints, context: item.context };
   if (item.hidden === true) obj.hidden = true;
   if (item.hidden === false) obj.hidden = false;
   cloudOverrides[String(idx)] = obj;
@@ -1828,6 +1839,19 @@ function showToast(msg, isError) {
   clearTimeout(toast._timeout);
   // Errors stay 10s for screenshot, success 3s
   toast._timeout = setTimeout(function() { toast.classList.remove('show'); }, isError ? 10000 : 3000);
+}
+
+// 云端同步状态指示：synced / local / error / syncing / pending
+function setCloudSyncStatus(state, label) {
+  var el = document.getElementById('cloudSyncStatus');
+  if (!el) return;
+  el.className = 'sync-status ' + state;
+  el.textContent = label || (
+    state === 'synced'  ? '☁️ 已同步' :
+    state === 'local'   ? '⚠️ 仅本地' :
+    state === 'error'   ? '⚠️ 同步失败' :
+    state === 'syncing' ? '☁️ 同步中…' : '☁️ 待同步'
+  );
 }
 
 // ===== Chinese Text Editing =====
@@ -1943,8 +1967,7 @@ function saveStructuredCloudOverride() {
   
   // Build structured override object
   var obj = { cn: item.cn, en: item.en, alts: item.alts,
-              phonetic: item.phonetic, keyPoints: item.keyPoints, context: item.context,
-              motherPattern: item.motherPattern };
+              phonetic: item.phonetic, keyPoints: item.keyPoints, context: item.context };
   if (item.hidden === true) obj.hidden = true;
   if (item.hidden === false) obj.hidden = false;
   cloudOverrides[idx] = obj;
@@ -2051,7 +2074,6 @@ function getDoubaoTemplate() {
     + '    {"verb": "同义替换表达", "meaning": "中文含义"}\n'
     + '  ],\n'
     + '  "context": "用该句造一个生活化语境例句，并附中文",\n'
-    + '  "motherPattern": "可套用的母句模板，如 \'It takes courage to ...\'"\n'
     + '}\n\n'
     + '无法给出的字段留空字符串或空数组。';
 }
@@ -2159,8 +2181,7 @@ function _parseDoubaoByLabels(text) {
     { key: 'phonetic', rx: /^(音标|phonetic)\s*[:：]/i },
     { key: 'keyPoints', rx: /^(重点|解析|keypoints?|重点解析)\s*[:：]/i },
     { key: 'alts', rx: /^(其他说法|同义|替换|alts?)\s*[:：]/i },
-    { key: 'context', rx: /^(语境|context|语境串联)\s*[:：]/i },
-    { key: 'motherPattern', rx: /^(母句|模板|mother_?pattern)\s*[:：]/i }
+    { key: 'context', rx: /^(语境|context|语境串联)\s*[:：]/i }
   ];
   var result = {};
   var cur = null;
@@ -2196,16 +2217,15 @@ function parseDoubaoPaste(raw) {
     var keyPoints = _normKeyPoints(_pick(obj, ['keyPoints', 'keypoints', '重点', '重点解析', '解析']));
     var alts = _normAlts(_pick(obj, ['alts', 'alternatives', '其他说法', '同义', '同义替换', '替换']));
     var context = _pick(obj, ['context', '语境', '语境串联']);
-    var motherPattern = _pick(obj, ['motherPattern', 'mother_pattern', '母句', '母句模板', '模板']);
-    if (cn || en || phonetic || keyPoints.length || alts.length || context || motherPattern) {
+    if (cn || en || phonetic || keyPoints.length || alts.length || context) {
       return { en: en || '', cn: cn || '', phonetic: phonetic || '', keyPoints: keyPoints,
-               alts: alts, context: context || '', motherPattern: motherPattern || '' };
+               alts: alts, context: context || '' };
     }
   }
   // 标签兜底
   var byLabel = _parseDoubaoByLabels(raw);
   if (byLabel.cn || byLabel.en || byLabel.phonetic || byLabel.keyPoints.length
-      || byLabel.alts.length || byLabel.context || byLabel.motherPattern) {
+      || byLabel.alts.length || byLabel.context) {
     return byLabel;
   }
   return { error: '无法解析豆包回复，请确认粘贴的是完整回复（JSON 或带「字段名：」的格式）' };
@@ -2224,7 +2244,6 @@ function applyDoubaoPaste() {
   if (parsed.keyPoints && parsed.keyPoints.length) item.keyPoints = parsed.keyPoints;
   if (parsed.alts && parsed.alts.length) item.alts = parsed.alts;
   if (parsed.context) item.context = parsed.context;
-  if (parsed.motherPattern) item.motherPattern = parsed.motherPattern;
 
   saveTranslationCloud(currentIndex);
   var aiBtn = document.getElementById('aiBtn');
@@ -2237,7 +2256,6 @@ function applyDoubaoPaste() {
   if (parsed.keyPoints && parsed.keyPoints.length) parts.push('重点×' + parsed.keyPoints.length);
   if (parsed.alts && parsed.alts.length) parts.push('同义×' + parsed.alts.length);
   if (parsed.context) parts.push('语境');
-  if (parsed.motherPattern) parts.push('母句模板');
 
   closeDoubaoPaste();
   render();
@@ -2869,16 +2887,20 @@ async function saveTranslationCloud(idx) {
   var overridesKey = String(idx);
 
   var obj = { cn: item.cn, en: item.en, alts: item.alts,
-              phonetic: item.phonetic, keyPoints: item.keyPoints, context: item.context,
-              motherPattern: item.motherPattern };
+              phonetic: item.phonetic, keyPoints: item.keyPoints, context: item.context };
   if (item.hidden === true) obj.hidden = true;
   if (item.hidden === false) obj.hidden = false;
   cloudOverrides[overridesKey] = obj;
 
   try { localStorage.setItem('flipped_overrides', JSON.stringify(cloudOverrides)); } catch(e) {}
 
-  if (!cloudAvailable) { showToast('✅ 已保存到本地', false); return; }
+  if (!cloudAvailable) {
+    setCloudSyncStatus('local', '⚠️ 仅本地');
+    showToast('✅ 已保存到本地（云端暂不可用，联网后点 ☁️ 同步）', false);
+    return;
+  }
 
+  setCloudSyncStatus('syncing', '☁️ 同步中…');
   // 读取云端最新 -> 合并其他句子的覆盖 -> 回写，避免手机/电脑各改不同句时互相覆盖
   try {
     var latest = await fetch(CLOUD_GET_URL + '&_t=' + Date.now(), {
@@ -2904,13 +2926,17 @@ async function saveTranslationCloud(idx) {
   xhr.onload = function() {
     if (xhr.status >= 200 && xhr.status < 300) {
       cloudAvailable = true;
+      setCloudSyncStatus('synced', '☁️ 已同步云端');
+      showToast('✅ 已保存并同步到云端', false);
     } else {
       cloudAvailable = false;
+      setCloudSyncStatus('error', '⚠️ 同步失败');
       showToast('⚠️ 云端同步失败，已保存到本地', true);
     }
   };
   xhr.onerror = function() {
     cloudAvailable = false;
+    setCloudSyncStatus('error', '⚠️ 同步失败');
     showToast('⚠️ 网络异常，已保存到本地', true);
   };
   xhr.send(JSON.stringify(cloudOverrides));
