@@ -93,6 +93,7 @@ header .counter {
 .sync-status.synced { color: #4caf50; border-color: rgba(76,175,80,0.4); }
 .sync-status.local  { color: #ffb74d; border-color: rgba(255,183,77,0.4); }
 .sync-status.error  { color: #ef5350; border-color: rgba(239,83,80,0.4); }
+.sync-status.full   { color: #ef5350; border-color: rgba(239,83,80,0.4); background: rgba(239,83,80,0.12); }
 .sync-status.syncing{ color: #4fc3f7; border-color: rgba(79,195,247,0.4); }
 .update-btn.has-update {
   background: rgba(76, 175, 80, 0.2);
@@ -1066,6 +1067,17 @@ footer button:active {
     </div>
     <div style="margin-bottom:14px;">
       <label style="font-size:12px; color:#8899aa; display:block; margin-bottom:6px;">
+        🐙 GitHub 同步令牌（fine-grained PAT）
+      </label>
+      <input type="password" id="settingsGhToken" placeholder="github_pat_xxx"
+        style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.15);
+               background:#0f3460; color:#fff; font-size:13px; font-family:monospace; outline:none;">
+      <div style="font-size:11px; color:#667; margin-top:4px;">
+        仅存本机。需 <b>Contents: Read and write</b>、仅仓库 <b>caidanping/flipped-english</b>。用于跨设备同步你的翻译。
+      </div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px; color:#8899aa; display:block; margin-bottom:6px;">
         🔗 AI 代理地址（解决手机/PWA 跨域 CORS）
       </label>
       <input type="text" id="settingsProxyUrl" placeholder="https://your-worker.workers.dev/api/translate"
@@ -1179,6 +1191,27 @@ footer button:active {
     <button class="ai-action-btn ai-btn-translate" style="width:100%; margin-bottom:8px;" onclick="copyDoubaoTemplate()">
       📋 复制提问模板
     </button>
+
+    <div style="border:1px solid rgba(102,126,234,0.25); border-radius:10px; padding:10px; margin-bottom:10px; background:rgba(102,126,234,0.06);">
+      <div style="font-size:12px; color:#9db4ff; margin-bottom:8px;">📐 翻译范围（合并多句为 1 句）</div>
+      <div class="ai-range-row">
+        <label>向上取：</label>
+        <button onclick="dbAdjRange('up',-1)">−</button>
+        <span class="val" id="dbUpCount">1</span>
+        <button onclick="dbAdjRange('up',1)">+</button>
+      </div>
+      <div class="ai-range-row">
+        <label>向下取：</label>
+        <button onclick="dbAdjRange('down',-1)">−</button>
+        <span class="val" id="dbDownCount">1</span>
+        <button onclick="dbAdjRange('down',1)">+</button>
+      </div>
+      <div style="font-size:11px; color:#7c89a8; margin-top:8px; line-height:1.6;">
+        上0下0=仅当前句｜上1下0=上1+当前｜上1下1=上1+当前+下1｜上1下2=上1+当前+下2｜上2下2=上2+当前+下2<br>
+        ⚠️ 范围＞0 时，「解析并应用」会合并为 1 句，原句标记「已合并」（顶栏 👁 可恢复）。
+      </div>
+    </div>
+
     <textarea class="ai-preview-box" id="doubaoTemplateBox" rows="10" readonly
       style="background:#0a1626; color:#9db4ff; font-size:12px;"></textarea>
 
@@ -1208,16 +1241,107 @@ let data = [];
 let visibleIndices = []; // indices of non-hidden sentences
 let showHidden = false;   // toggle: show hidden (merged) records
 
-// ===== Cloud sync config =====
-const CLOUD_BIN_ID = '6a43394ff5f4af5e29453814';
-const CLOUD_API_KEY = '$2a$10$gx91oQ1uGC0m2UED6DaOHeY.66w5eJK8UrK7ZEfmZeHHH4W1.yAEe';
-const CLOUD_GET_URL = 'https://api.jsonbin.io/v3/b/' + CLOUD_BIN_ID + '/latest?meta=false';
-const CLOUD_PUT_URL = 'https://api.jsonbin.io/v3/b/' + CLOUD_BIN_ID;
+// ===== Cloud Sync（GitHub 仓库文件，单文件约 1MB 上限，免费）=====
+// 令牌不写死在源码：运行时从本机 localStorage 读取（设置⚙️里粘贴），避免落入公开仓库被 GitHub 密钥扫描拦截，也避免暴露给任意访客
+let GH_TOKEN = localStorage.getItem('flipped_gh_token') || '__GITHUB_TOKEN__';
+const GH_REPO  = 'caidanping/flipped-english';
+const GH_PATH  = 'cloud/overrides.json';
+const GH_REF   = 'sync';   // 同步数据写在独立 sync 分支，不与 master 上的代码 git push 冲突
+const GH_API   = 'https://api.github.com/repos/' + GH_REPO + '/contents/' + GH_PATH;
 let cloudOverrides = {};
 let cloudAvailable = true;
+let ghSha = null;
+function ghTokenConfigured() {
+  return !!GH_TOKEN && GH_TOKEN !== '__GITHUB_TOKEN__';
+}
+
+function ghAuthHeaders(extra) {
+  const h = { 'Authorization': 'Bearer ' + GH_TOKEN, 'Accept': 'application/vnd.github+json' };
+  if (extra) Object.assign(h, extra);
+  return h;
+}
+function ghB64Decode(b64) {
+  b64 = (b64 || '').replace(/\s/g, '');
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder('utf-8').decode(bytes);
+}
+function ghB64Encode(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+// 读取云端覆盖文件；404 视为空
+async function ghRead() {
+  if (!ghTokenConfigured()) return { ok: false, overrides: {}, sha: null, status: 'no-token' };
+  try {
+    const resp = await fetch(GH_API + '?ref=' + GH_REF, { headers: ghAuthHeaders(), cache: 'no-store' });
+    if (resp.status === 404) return { ok: true, overrides: {}, sha: null, status: 404 };
+    if (!resp.ok) return { ok: false, overrides: {}, sha: null, status: resp.status };
+    const j = await resp.json();
+    ghSha = j.sha || null;
+    let ov = {};
+    try { ov = JSON.parse(ghB64Decode(j.content)) || {}; } catch (e) { ov = {}; }
+    if (Array.isArray(ov)) ov = {};
+    return { ok: true, overrides: ov, sha: ghSha, status: 200 };
+  } catch (e) {
+    return { ok: false, overrides: {}, sha: null, status: 0 };
+  }
+}
+// 写入云端覆盖：自动合并远端其他设备改动；409 冲突重试一次
+async function ghWrite(overrides) {
+  if (!ghTokenConfigured()) return { ok: false, status: 'no-token' };
+  async function doWrite() {
+    const r = await ghRead();
+    if (r.ok && r.overrides && typeof r.overrides === 'object') {
+      for (const k in r.overrides) {
+        if (k === '__v') continue;
+        if (!(k in overrides)) overrides[k] = r.overrides[k];
+      }
+    }
+    const payload = { message: 'sync overrides', content: ghB64Encode(JSON.stringify(overrides)), branch: GH_REF };
+    if (ghSha) payload.sha = ghSha;
+    const resp = await fetch(GH_API, {
+      method: 'PUT',
+      headers: ghAuthHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(payload)
+    });
+    if (resp.ok) {
+      const rj = await resp.json();
+      ghSha = (rj.content && rj.content.sha) || ghSha;
+      return { ok: true };
+    }
+    if (resp.status === 409 && !ghWrite._retried) {
+      ghWrite._retried = true;
+      ghSha = null;
+      return doWrite();
+    }
+    const eb = await resp.json().catch(function(){ return {}; });
+    return { ok: false, status: resp.status, err: eb };
+  }
+  try {
+    const res = await doWrite();
+    ghWrite._retried = false;
+    if (res.ok) {
+      cloudAvailable = true;
+      setCloudSyncStatus('synced', '☁️ 已同步云端');
+      try { localStorage.setItem('flipped_overrides', JSON.stringify(overrides)); } catch (e) {}
+      return { ok: true };
+    }
+    cloudAvailable = false;
+    setCloudSyncStatus('error', '⚠️ 同步失败');
+    return res;
+  } catch (e) {
+    cloudAvailable = false;
+    setCloudSyncStatus('error', '⚠️ 同步失败');
+    return { ok: false, status: 0, err: { message: e.message } };
+  }
+}
 
 // ===== App version (每次重新部署前手动+1，并同步 version.txt) =====
-const APP_VERSION = '2026-07-17-18-00';
+const APP_VERSION = '2026-07-17-21-05';
 let appUpdateDismissed = false;
 
 // ===== Init =====
@@ -1618,15 +1742,17 @@ function doJump() {
 
 // ===== Cloud Sync =====
 async function loadCloudOverrides() {
+  if (!ghTokenConfigured()) {
+    cloudAvailable = false;
+    setCloudSyncStatus('error', '⚠️ 未配置令牌');
+    fallbackLocalOverrides();
+    rebuildVisibleIndices();
+    return;
+  }
   try {
-    const resp = await fetch(CLOUD_GET_URL, {
-      headers: { 'X-Master-Key': CLOUD_API_KEY },
-      cache: 'no-store'
-    });
-    if (resp.ok) {
-      const json = await resp.json();
-      cloudOverrides = json.record || json || {};
-      if (Array.isArray(cloudOverrides)) cloudOverrides = {};
+    const r = await ghRead();
+    if (r.ok) {
+      cloudOverrides = r.overrides || {};
       // Apply overrides: support both string (cn-only) and object (structured) values
       for (const [idx, val] of Object.entries(cloudOverrides)) {
         const i = parseInt(idx);
@@ -1693,6 +1819,11 @@ async function loadCloudOverrides() {
 }
 
 async function forceRefreshCloud() {
+  if (!ghTokenConfigured()) {
+    setCloudSyncStatus('error', '⚠️ 未配置令牌');
+    showToast('⚠️ 请先在设置(⚙️)中配置 GitHub 同步令牌', true);
+    return;
+  }
   var btn = document.getElementById('cloudSyncBtn');
   btn.textContent = '⏳';
   btn.disabled = true;
@@ -1703,14 +1834,9 @@ async function forceRefreshCloud() {
 
   // Re-fetch from cloud
   try {
-    var resp = await fetch(CLOUD_GET_URL + '&_t=' + Date.now(), {
-      headers: { 'X-Master-Key': CLOUD_API_KEY },
-      cache: 'no-store'
-    });
-    if (resp.ok) {
-      var json = await resp.json();
-      cloudOverrides = json.record || json || {};
-      if (Array.isArray(cloudOverrides)) cloudOverrides = {};
+    var r = await ghRead();
+    if (r.ok) {
+      cloudOverrides = r.overrides || {};
       cloudAvailable = true;
       setCloudSyncStatus('synced', '☁️ 已同步云端');
 
@@ -1801,29 +1927,25 @@ async function saveCloudOverride(idx, newText) {
   var item = data[idx];
   item.cn = newText;
   
-  // Store as structured object for consistency
-  var obj = { cn: newText, en: item.en, alts: item.alts,
-              phonetic: item.phonetic, keyPoints: item.keyPoints, context: item.context };
+  // Store as structured object for consistency. en 基础字幕已有(UI 不改 en)，不冗余存储
+  var obj = {};
+  if (newText && newText.trim()) obj.cn = newText;
+  if (item.phonetic) obj.phonetic = item.phonetic;
+  if (item.keyPoints) obj.keyPoints = item.keyPoints;
+  if (item.alts) obj.alts = item.alts;
+  if (item.context) obj.context = item.context;
   if (item.hidden === true) obj.hidden = true;
-  if (item.hidden === false) obj.hidden = false;
+  else if (item.hidden === false) obj.hidden = false;
   cloudOverrides[String(idx)] = obj;
   
   try { localStorage.setItem('flipped_overrides', JSON.stringify(cloudOverrides)); } catch(e) {}
   if (!cloudAvailable) { showToast('✅ 已保存到本地', false); return; }
   try {
-    const resp = await fetch(CLOUD_PUT_URL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': CLOUD_API_KEY
-      },
-      body: JSON.stringify(cloudOverrides)
-    });
-    if (resp.ok) {
-      showToast('✅ 已保存到云端', false);
+    const res = await ghWrite(cloudOverrides);
+    if (!res.ok) {
+      showToast('⚠️ 云端同步失败（' + (res.status || '网络') + '），已保存到本地', true);
     } else {
-      cloudAvailable = false;
-      showToast('⚠️ 云端同步失败，已保存到本地', true);
+      showToast('✅ 已保存到云端', false);
     }
   } catch(e) {
     cloudAvailable = false;
@@ -1961,7 +2083,7 @@ function cancelVerbGroup(idx) {
 }
 
 // ===== Structured Cloud Sync (alts + cn) =====
-function saveStructuredCloudOverride() {
+async function saveStructuredCloudOverride() {
   var item = data[currentIndex];
   var idx = String(currentIndex);
   
@@ -1975,26 +2097,13 @@ function saveStructuredCloudOverride() {
   try { localStorage.setItem('flipped_overrides', JSON.stringify(cloudOverrides)); } catch(e) {}
   
   if (!cloudAvailable) { showToast('✅ 已保存到本地', false); render(); return; }
-  
-  var xhr = new XMLHttpRequest();
-  xhr.open('PUT', CLOUD_PUT_URL, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.setRequestHeader('X-Master-Key', CLOUD_API_KEY);
-  xhr.onload = function() {
-    if (xhr.status >= 200 && xhr.status < 300) {
-      showToast('✅ 已保存到云端', false);
-    } else {
-      cloudAvailable = false;
-      showToast('⚠️ 云端同步失败，已保存到本地', true);
-    }
-    render();
-  };
-  xhr.onerror = function() {
-    cloudAvailable = false;
-    showToast('⚠️ 网络异常，已保存到本地', true);
-    render();
-  };
-  xhr.send(JSON.stringify(cloudOverrides));
+  const res = await ghWrite(cloudOverrides);
+  if (!res.ok) {
+    showToast('⚠️ 云端同步失败（' + (res.status || '网络') + '），已保存到本地', true);
+  } else {
+    showToast('✅ 已保存到云端', false);
+  }
+  render();
 }
 
 // ===== Utils =====
@@ -2008,6 +2117,10 @@ function escapeHtml(str) {
 var aiUpCount = 1;
 var aiDownCount = 1;
 var aiDirection = 'en2cn'; // 'en2cn' or 'cn2en'
+
+// ===== Doubao 模板「翻译范围」状态（独立于 AI 面板，默认合并 1 上 1 下）=====
+var dbUpCount = 1;
+var dbDownCount = 1;
 var aiIsTranslating = false;
 
 function openAITranslate() {
@@ -2056,15 +2169,55 @@ function closeAITranslate(event) {
 
 // ===== 粘贴豆包结果：手动录入替代自动AI =====
 function getDoubaoTemplate() {
-  var item = data[currentIndex];
-  var en = item ? (item.en || '') : '';
-  var cn = item ? (item.cn || '') : '';
-  return '请把下面这句话做英语学习解析，并严格按 JSON 格式输出（只输出 JSON，不要加多余解释）：\n\n'
-    + '【原句英文】\n' + en + '\n\n'
-    + '【中文参考】\n' + cn + '\n\n'
+  var up = Math.max(0, Math.min(2, dbUpCount | 0));
+  var down = Math.max(0, Math.min(2, dbDownCount | 0));
+
+  // 收集范围内的连续字幕
+  var block = [];
+  for (var i = currentIndex - up; i <= currentIndex + down; i++) {
+    if (i >= 0 && i < data.length && data[i]) block.push(data[i]);
+  }
+
+  // 仅当前句：保持原有单句模板
+  if (block.length <= 1) {
+    var item = data[currentIndex];
+    var en = item ? (item.en || '') : '';
+    var cn = item ? (item.cn || '') : '';
+    return '请把下面这句话做英语学习解析，并严格按 JSON 格式输出（只输出 JSON，不要加多余解释）：\n\n'
+      + '【原句英文】\n' + en + '\n\n'
+      + '【中文参考】\n' + cn + '\n\n'
+      + '请按以下结构输出：\n'
+      + '{\n'
+      + '  "en": "原英文句（可微调）",\n'
+      + '  "cn": "中文翻译",\n'
+      + '  "phonetic": "美式音标，如 /flɪpt/",\n'
+      + '  "keyPoints": [\n'
+      + '    {"expression": "重点词组或句型", "explanation": "讲解与例句"}\n'
+      + '  ],\n'
+      + '  "alts": [\n'
+      + '    {"verb": "同义替换表达", "meaning": "中文含义"}\n'
+      + '  ],\n'
+      + '  "context": "用该句造一个生活化语境例句，并附中文",\n'
+      + '}\n\n'
+      + '无法给出的字段留空字符串或空数组。';
+  }
+
+  // 多句：合并模板 —— 要求豆包把 N 句融合成「一句」英文
+  var n = block.length;
+  var lines = [];
+  for (var k = 0; k < block.length; k++) {
+    var it = block[k];
+    lines.push((k + 1) + '. ' + (it.en || '') + '   （中：' + (it.cn || '') + '）');
+  }
+  return '请把以下 ' + n + ' 句连续英文（来自电影《' + MOVIE_NAME + '》的相邻字幕）合并成「一句」自然通顺的英文，并做英语学习解析。严格按 JSON 格式输出（只输出 JSON，不要加多余解释）：\n\n'
+    + '【待合并的连续字幕】\n' + lines.join('\n') + '\n\n'
+    + '要求：\n'
+    + '- en：把上面 ' + n + ' 句融合改写成「一句」连贯的英文（不是逐句罗列），作为合并后的整句\n'
+    + '- cn：这整句的中文翻译\n'
+    + '- 其余字段按下方结构输出\n\n'
     + '请按以下结构输出：\n'
     + '{\n'
-    + '  "en": "原英文句（可微调）",\n'
+    + '  "en": "合并后的一整句英文",\n'
     + '  "cn": "中文翻译",\n'
     + '  "phonetic": "美式音标，如 /flɪpt/",\n'
     + '  "keyPoints": [\n'
@@ -2104,6 +2257,11 @@ function fallbackCopyText(txt) {
 function openDoubaoPaste() {
   var item = data[currentIndex];
   if (!item) return;
+  // 同步步进器显示
+  var upEl = document.getElementById('dbUpCount');
+  var downEl = document.getElementById('dbDownCount');
+  if (upEl) upEl.textContent = dbUpCount;
+  if (downEl) downEl.textContent = dbDownCount;
   document.getElementById('doubaoTemplateBox').value = getDoubaoTemplate();
   document.getElementById('doubaoPasteBox').value = '';
   var st = document.getElementById('doubaoStatus');
@@ -2231,11 +2389,37 @@ function parseDoubaoPaste(raw) {
   return { error: '无法解析豆包回复，请确认粘贴的是完整回复（JSON 或带「字段名：」的格式）' };
 }
 
-function applyDoubaoPaste() {
+async function applyDoubaoPaste() {
   var raw = document.getElementById('doubaoPasteBox').value;
   var parsed = parseDoubaoPaste(raw);
   if (parsed.error) { showDoubaoStatus(parsed.error, true); return; }
 
+  // 计算翻译范围覆盖的字幕下标
+  var up = Math.max(0, Math.min(2, dbUpCount | 0));
+  var down = Math.max(0, Math.min(2, dbDownCount | 0));
+  var indices = [];
+  for (var i = currentIndex - up; i <= currentIndex + down; i++) {
+    if (i >= 0 && i < data.length && data[i]) indices.push(i);
+  }
+
+  // 范围 > 1：合并为 1 句，原句软删除（hidden），自动重算计数
+  if (indices.length > 1) {
+    mergeSentences(indices, parsed);
+    closeDoubaoPaste();
+    render();
+    var parts = [];
+    if (parsed.cn) parts.push('中文');
+    if (parsed.en) parts.push('英文');
+    if (parsed.phonetic) parts.push('音标');
+    if (parsed.keyPoints && parsed.keyPoints.length) parts.push('重点×' + parsed.keyPoints.length);
+    if (parsed.alts && parsed.alts.length) parts.push('同义×' + parsed.alts.length);
+    if (parsed.context) parts.push('语境');
+    showToast('✅ 已合并：' + indices.length + ' 句 → 1 句（' + parts.join('、')
+      + '），原句已标记「已合并」，可点 👁 恢复', false);
+    return;
+  }
+
+  // 仅当前句：原单句写入逻辑
   var item = data[currentIndex];
   if (!item) return;
   if (parsed.cn) item.cn = parsed.cn;
@@ -2287,6 +2471,26 @@ function adjRange(which, delta) {
     document.getElementById('aiDownCount').textContent = aiDownCount;
   }
   updateAIPreview();
+}
+
+// ===== Doubao 模板「翻译范围」步进器 =====
+function dbAdjRange(which, delta) {
+  if (which === 'up') {
+    dbUpCount = Math.max(0, Math.min(2, dbUpCount + delta));
+  } else {
+    dbDownCount = Math.max(0, Math.min(2, dbDownCount + delta));
+  }
+  var upEl = document.getElementById('dbUpCount');
+  var downEl = document.getElementById('dbDownCount');
+  if (upEl) upEl.textContent = dbUpCount;
+  if (downEl) downEl.textContent = dbDownCount;
+  refreshDoubaoTemplate();
+}
+
+// 步进器变化时，刷新模板预览文本框（范围变了，发往豆包的内容也变）
+function refreshDoubaoTemplate() {
+  var ta = document.getElementById('doubaoTemplateBox');
+  if (ta) ta.value = getDoubaoTemplate();
 }
 
 function updateAIPreview() {
@@ -2725,6 +2929,8 @@ function toggleSettings() {
     document.getElementById('settingsApiKey').value = getApiKey();
     var proxyEl = document.getElementById('settingsProxyUrl');
     if (proxyEl) proxyEl.value = getProxyUrl();
+    var ghEl = document.getElementById('settingsGhToken');
+    if (ghEl) ghEl.value = localStorage.getItem('flipped_gh_token') || '';
     modal.classList.add('show');
   }
 }
@@ -2744,25 +2950,43 @@ function saveApiKey() {
     localStorage.removeItem('flipped_ark_key');
   }
 
+  // 保存/清除 GitHub 同步令牌
+  var ghEl = document.getElementById('settingsGhToken');
+  var ghTok = ghEl ? ghEl.value.trim() : '';
+  if (ghTok) {
+    localStorage.setItem('flipped_gh_token', ghTok);
+    GH_TOKEN = ghTok;
+  } else {
+    localStorage.removeItem('flipped_gh_token');
+    GH_TOKEN = '__GITHUB_TOKEN__';
+  }
+
   document.getElementById('settingsModal').classList.remove('show');
   updateSettingsBtn();
   var msg = '✅ 设置已保存（仅存于此设备）';
   if (proxy) msg += '　🔗 已启用代理：' + proxy;
+  if (ghTok) { msg += '　🐙 云端同步已启用'; loadCloudOverrides(); }
   showToast(msg);
 }
 
 function clearApiKey() {
   localStorage.removeItem('flipped_ark_key');
+  localStorage.removeItem('flipped_gh_token');
+  GH_TOKEN = '__GITHUB_TOKEN__';
   document.getElementById('settingsApiKey').value = '';
+  var ghEl = document.getElementById('settingsGhToken');
+  if (ghEl) ghEl.value = '';
+  cloudAvailable = false;
+  setCloudSyncStatus('error', '⚠️ 未配置令牌');
   updateSettingsBtn();
-  showToast('API Key 已清除');
+  showToast('已清除 API Key 与 GitHub 令牌');
 }
 
 function updateSettingsBtn() {
   var btn = document.getElementById('settingsBtn');
-  var hasKey = !!getApiKey();
+  var hasKey = !!getApiKey() || ghTokenConfigured();
   btn.classList.toggle('configured', hasKey);
-  btn.title = hasKey ? 'API Key 已配置' : '设置 API Key';
+  btn.title = hasKey ? 'API Key / GitHub 令牌已配置' : '设置 API Key / GitHub 令牌';
 }
 
 // 强制清除 Service Worker（旧 SW 不更新导致跨域 fetch 失败的终极自救）
@@ -2885,11 +3109,17 @@ function saveTranslationResult(idx, result) {
 async function saveTranslationCloud(idx) {
   var item = data[idx];
   var overridesKey = String(idx);
+  var existing = cloudOverrides[overridesKey] || {};
 
-  var obj = { cn: item.cn, en: item.en, alts: item.alts,
-              phonetic: item.phonetic, keyPoints: item.keyPoints, context: item.context };
+  // 只存"相对基础字幕的增量"：en 基础字幕已有(UI 不改 en)；cn 仅在之前手动改过才保留
+  var obj = {};
+  if (item.phonetic) obj.phonetic = item.phonetic;
+  if (item.keyPoints) obj.keyPoints = item.keyPoints;
+  if (item.alts) obj.alts = item.alts;
+  if (item.context) obj.context = item.context;
+  if (existing.cn) obj.cn = existing.cn; // 保留之前手动改过的 cn
   if (item.hidden === true) obj.hidden = true;
-  if (item.hidden === false) obj.hidden = false;
+  else if (item.hidden === false) obj.hidden = false;
   cloudOverrides[overridesKey] = obj;
 
   try { localStorage.setItem('flipped_overrides', JSON.stringify(cloudOverrides)); } catch(e) {}
@@ -2900,46 +3130,13 @@ async function saveTranslationCloud(idx) {
     return;
   }
 
-  setCloudSyncStatus('syncing', '☁️ 同步中…');
-  // 读取云端最新 -> 合并其他句子的覆盖 -> 回写，避免手机/电脑各改不同句时互相覆盖
-  try {
-    var latest = await fetch(CLOUD_GET_URL + '&_t=' + Date.now(), {
-      headers: { 'X-Master-Key': CLOUD_API_KEY }, cache: 'no-store'
-    }).then(function(r) { return r.ok ? r.json() : null; });
-    if (latest) {
-      var latestRec = latest.record || latest;
-      if (latestRec && typeof latestRec === 'object') {
-        for (var k in latestRec) {
-          if (k === '__v') continue;
-          if (!(k in cloudOverrides)) cloudOverrides[k] = latestRec[k];
-        }
-      }
-    }
-  } catch(e) { /* 网络异常时仍用本地合并结果 */ }
-
   cloudOverrides[overridesKey] = obj; // 合并后再次确保本句为本地最新
-
-  var xhr = new XMLHttpRequest();
-  xhr.open('PUT', CLOUD_PUT_URL, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.setRequestHeader('X-Master-Key', CLOUD_API_KEY);
-  xhr.onload = function() {
-    if (xhr.status >= 200 && xhr.status < 300) {
-      cloudAvailable = true;
-      setCloudSyncStatus('synced', '☁️ 已同步云端');
-      showToast('✅ 已保存并同步到云端', false);
-    } else {
-      cloudAvailable = false;
-      setCloudSyncStatus('error', '⚠️ 同步失败');
-      showToast('⚠️ 云端同步失败，已保存到本地', true);
-    }
-  };
-  xhr.onerror = function() {
-    cloudAvailable = false;
-    setCloudSyncStatus('error', '⚠️ 同步失败');
-    showToast('⚠️ 网络异常，已保存到本地', true);
-  };
-  xhr.send(JSON.stringify(cloudOverrides));
+  const res = await ghWrite(cloudOverrides);
+  if (!res.ok) {
+    showToast('⚠️ 云端同步失败（' + (res.status || '网络') + '），已保存到本地', true);
+  } else {
+    showToast('✅ 已保存并同步到云端', false);
+  }
 }
 
 async function syncMergeToCloud() {
@@ -2948,29 +3145,13 @@ async function syncMergeToCloud() {
     return;
   }
 
-  try {
-    var resp = await fetch(CLOUD_PUT_URL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': CLOUD_API_KEY
-      },
-      body: JSON.stringify(cloudOverrides)
-    });
-
-    if (resp.ok) {
-      showToast('✅ 合并已同步到云端，其他设备刷新即可看到', false);
-    } else {
-      var errText = '';
-      try { errText = await resp.text(); } catch(e) {}
-      console.error('[syncMerge] PUT failed:', resp.status, errText.substring(0, 200));
-      cloudAvailable = false;
-      showToast('⚠️ 云端同步失败(' + resp.status + ')，已保存到本地。请稍后重试', true);
-    }
-  } catch(e) {
-    console.error('[syncMerge] network error:', e.message);
+  const res = await ghWrite(cloudOverrides);
+  if (res.ok) {
+    showToast('✅ 合并已同步到云端，其他设备刷新即可看到', false);
+  } else {
+    console.error('[syncMerge] failed:', res.status, res.err && res.err.message);
     cloudAvailable = false;
-    showToast('⚠️ 网络异常，合并仅保存在本地。联网后打开APP会自动重试', true);
+    showToast('⚠️ 云端同步失败（' + (res.status || '网络') + '），合并仅存本地。请稍后重试', true);
   }
 }
 
@@ -2994,7 +3175,7 @@ function mergeSentences(indices, result) {
 
   console.log('[merge] indices:', indices, 'insertPos:', insertPos, 'currentIndex before:', currentIndex);
 
-  // Build merged English from all selected sentences
+  // Build merged English from all selected sentences (本地拼接作为兜底)
   var mergedEN = '';
   for (var i = 0; i < indices.length; i++) {
     var d = data[indices[i]];
@@ -3013,11 +3194,13 @@ function mergeSentences(indices, result) {
     }
     mergedEN += en;
   }
+  // 优先采用 AI 合成的「一句」整句（复制提问模板路径由豆包返回融合后的 en）
+  if (result && result.en && result.en.trim()) mergedEN = result.en.trim();
 
   // Build merged Chinese
   var mergedCN = '';
-  if (aiDirection === 'en2cn') {
-    mergedCN = result.cn || '';
+  if (result && result.cn && result.cn.trim()) {
+    mergedCN = result.cn.trim();
   } else if (aiDirection === 'cn2en' && data[indices[0]] && data[indices[0]].cn) {
     mergedCN = data[indices[0]].cn;
   }
