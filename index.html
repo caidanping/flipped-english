@@ -1341,7 +1341,7 @@ async function ghWrite(overrides) {
 }
 
 // ===== App version (每次重新部署前手动+1，并同步 version.txt) =====
-const APP_VERSION = '2026-07-17-22-40';
+const APP_VERSION = '2026-07-17-23-05';
 let appUpdateDismissed = false;
 
 // ===== Init =====
@@ -1835,44 +1835,56 @@ async function forceRefreshCloud() {
   // Re-fetch from cloud
   try {
     var r = await ghRead();
+    // 移动端偶发网络抖动 / GitHub 限流：失败重试一次，避免误报
+    if (!r.ok) {
+      await new Promise(function(res){ setTimeout(res, 800); });
+      r = await ghRead();
+    }
     if (r.ok) {
       cloudOverrides = r.overrides || {};
       cloudAvailable = true;
       setCloudSyncStatus('synced', '☁️ 已同步云端');
 
-      // Re-apply all overrides to data array
-      for (var idx in cloudOverrides) {
-        if (idx === '__v') continue;
-        var i = parseInt(idx);
-        if (isNaN(i) || i < 0 || i >= data.length) continue;
-        var val = cloudOverrides[idx];
-        if (typeof val === 'string' && val.trim()) {
-          data[i].cn = val;
-        } else if (typeof val === 'object' && val !== null) {
-          if (val.cn && val.cn.trim()) data[i].cn = val.cn;
-          if (val.en && val.en.trim()) data[i].en = val.en;
-          if (val.alts) data[i].alts = val.alts;
-          if (val.phonetic) data[i].phonetic = val.phonetic;
-          if (val.keyPoints) data[i].keyPoints = val.keyPoints;
-          if (val.context) data[i].context = val.context;
-          if (val.hidden === true) data[i].hidden = true;
-          else if (val.hidden === false) data[i].hidden = false;
+      // 读取成功：把云端数据写回本地；后续 UI 渲染若偶发异常，也不应误报“网络异常”
+      try {
+        // Re-apply all overrides to data array
+        for (var idx in cloudOverrides) {
+          if (idx === '__v') continue;
+          var i = parseInt(idx);
+          if (isNaN(i) || i < 0 || i >= data.length) continue;
+          if (!data[i]) continue;
+          var val = cloudOverrides[idx];
+          if (typeof val === 'string' && val.trim()) {
+            data[i].cn = val;
+          } else if (typeof val === 'object' && val !== null) {
+            if (val.cn && val.cn.trim()) data[i].cn = val.cn;
+            if (val.en && val.en.trim()) data[i].en = val.en;
+            if (val.alts) data[i].alts = val.alts;
+            if (val.phonetic) data[i].phonetic = val.phonetic;
+            if (val.keyPoints) data[i].keyPoints = val.keyPoints;
+            if (val.context) data[i].context = val.context;
+            if (val.hidden === true) data[i].hidden = true;
+            else if (val.hidden === false) data[i].hidden = false;
+          }
         }
+
+        // Save to local cache
+        try { localStorage.setItem('flipped_overrides', JSON.stringify(cloudOverrides)); } catch(e) {}
+
+        rebuildVisibleIndices();
+        render();
+      } catch (applyErr) {
+        console.error('[forceRefresh] 应用云端数据时发生非致命错误：', applyErr);
       }
-
-      // Save to local cache
-      try { localStorage.setItem('flipped_overrides', JSON.stringify(cloudOverrides)); } catch(e) {}
-
-      rebuildVisibleIndices();
-      render();
       showToast('✅ 已从云端刷新（' + visibleIndices.length + ' 条可见）', false);
     } else {
       setCloudSyncStatus('error', '⚠️ 同步失败');
-      showToast('⚠️ 云端不可达(' + resp.status + ')，使用本地数据', true);
+      var _st = (typeof r.status === 'number' && r.status > 0) ? ('HTTP ' + r.status) : '网络异常';
+      showToast('⚠️ 云端同步未成功（' + _st + '），已保留本地数据', true);
     }
   } catch(e) {
     setCloudSyncStatus('error', '⚠️ 同步失败');
-    showToast('⚠️ 网络异常，使用本地数据', true);
+    showToast('⚠️ 网络异常，已保留本地数据', true);
   }
 
   btn.textContent = '☁️';
